@@ -44,6 +44,7 @@ open index.html      # macOS；Windows 双击，Linux 用 xdg-open
 ├── docs/
 │   ├── SCHEMA.md       单条效果的字段规范（新增必须照此写）
 │   ├── GLOSSARY.md     术语表：已收录 24 条 + 40 条待收录
+│   ├── SOURCES.md      采集计划：源分层、采集卡、去重规则、下一批队列
 │   └── PROGRESS.md     进度、验证记录、踩过的坑
 ├── inbox/              投喂原料存放处（视频/截图默认不进仓库）
 ├── .gitignore

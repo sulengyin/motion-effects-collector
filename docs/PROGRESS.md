@@ -1,5 +1,18 @@
 # 进度 · PROGRESS
 
+## 2026-11-04 · 制定采集计划（未新增效果）
+
+**结论先说**：现有 8 个分类只描述"怎么动"，而你给的站点展示的是"在什么场景里动"。两者正交，所以计划里补了第二根轴 **Pattern（场景）**，否则收到 50 条之后一定找不着东西。
+
+**已核实的外部信息**
+- 60fps.design 有现成的 108 标签体系（Effects 26 / Patterns 40 / Elements / Gestures）+ Glossary + storyboard，可直接作为英文命名的锚点。
+- motionsites.ai 是"高端网站提示词库"（按 Hero / Pricing / Footer 分区），studio 版是"选设计 → AI 改造成你的"。两者产出的是**场景组合**，不是可复用代码，只取场景灵感。
+- GitHub 侧可用：iCSS（20k）、CSS-Inspiration（10k）、react-bits（50k）、animate.css（80k）、anime.js（70k）、Hover.css（25k）、SpinKit（19k）、animate-ui、motion-ui-design 元清单；3D 背景用 vanta / shadergradient / shaders。
+
+**产出**：`docs/SOURCES.md` — 源分四层、采集卡字段、入库门槛（价值÷成本≥1.5 且 200 行内）、四条去重规则、B1–B4 共 24 条候选队列、七步投喂流程、合规红线。
+
+**明确没做**：没有新增任何效果，没有改数据结构（Pattern 轴等 M3 再动）。
+
 ## 2026-11-04 · 页面自身的动效层（视觉打磨）
 
 **目标**：页面外壳不能只是"静态陈列 24 个会动的卡片"，自身的节奏也要立住。
