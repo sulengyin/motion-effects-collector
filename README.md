@@ -40,14 +40,17 @@ open index.html      # macOS；Windows 双击，Linux 用 xdg-open
 ├── dist/
 │   └── motion-lexicon.html  单文件版：数据已内联，可直接发给别人
 ├── tools/
-│   └── build-standalone.js  生成单文件版的脚本
+│   ├── build-standalone.js  生成单文件版的脚本
+│   └── check.js             提交前校验：字段 / 样式 / 引用 / 计数，并重建 dist
 ├── docs/
 │   ├── SCHEMA.md       单条效果的字段规范（新增必须照此写）
 │   ├── GLOSSARY.md     术语表：已收录 42 条 + 待收录清单
 │   ├── SOURCES.md      采集计划：源分层、采集卡、去重规则、下一批队列
-│   └── PROGRESS.md     进度、验证记录、踩过的坑
+│   ├── PROGRESS.md     进度、验证记录、踩过的坑
+│   └── CONVENTIONS.md  分支、提交、结构、敏感信息、协作约定
 ├── inbox/              投喂原料存放处（视频/截图默认不进仓库）
 ├── .gitignore
+├── LICENSE             MIT
 └── README.md
 ```
 
@@ -111,4 +114,6 @@ open index.html      # macOS；Windows 双击，Linux 用 xdg-open
 
 ## 许可
 
-个人项目，未附开源许可证。如需引用请先联系作者。
+[MIT](LICENSE)。代码可自由使用、修改、分发，保留版权声明即可。
+
+新增或修改效果前，请先看 [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md)；提交前跑 `node tools/check.js`，它会校验字段、样式、引用与计数，并重建单文件版。
