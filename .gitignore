@@ -1,0 +1,18 @@
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# 依赖与日志
+node_modules/
+*.log
+
+# 投喂原料（视频/截图可能很大，不进仓库；目录结构保留）
+inbox/*
+!inbox/.gitkeep
+
+# 临时文件
+*.tmp
+*.bak
