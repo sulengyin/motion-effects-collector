@@ -11,12 +11,15 @@
   --tx:#e9ecf3; --tx2:#98a0b2; --tx3:#666e82;
   --accent:#8b8cff; --accent2:#43d9ff; --stage:#0a0c11;
   --shadow:0 24px 60px rgba(0,0,0,.55);
+  --e-out:cubic-bezier(.22,1,.36,1); --e-soft:cubic-bezier(.4,0,.2,1);
+  --glow:rgba(140,150,255,.10);
 }
 html[data-theme="light"]{
   --bg:#f2f3f7; --surface:#ffffff; --surface2:#f7f8fb; --header:rgba(247,248,251,.82);
   --line:rgba(12,16,28,.1); --line2:rgba(12,16,28,.22);
   --tx:#12141c; --tx2:#565d6e; --tx3:#8b91a1;
   --shadow:0 18px 44px rgba(20,25,40,.12);
+  --glow:rgba(110,120,255,.12);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -25,12 +28,27 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
   -webkit-font-smoothing:antialiased;
   min-height:100vh;
+  transition:background-color .4s var(--e-soft),color .4s var(--e-soft);
 }
-html[data-theme="dark"] body{
-  background-image:
-    radial-gradient(900px 500px at 12% -10%, rgba(80,90,255,.13), transparent 70%),
-    radial-gradient(700px 420px at 92% 0%, rgba(0,190,255,.09), transparent 70%);
-  background-attachment:fixed;
+/* 背景光场：极缓慢漂移，给静态页面一点"呼吸" */
+.aura{
+  position:fixed; inset:-18%; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(42% 36% at 18% 16%, rgba(80,90,255,.16), transparent 70%),
+    radial-gradient(38% 32% at 84% 6%, rgba(0,190,255,.11), transparent 70%),
+    radial-gradient(40% 34% at 62% 92%, rgba(255,77,141,.055), transparent 72%);
+  animation:ui-aura 26s var(--e-soft) infinite alternate;
+  will-change:transform;
+}
+html[data-theme="light"] .aura{
+  background:
+    radial-gradient(42% 36% at 18% 16%, rgba(120,130,255,.13), transparent 70%),
+    radial-gradient(38% 32% at 84% 6%, rgba(0,180,255,.10), transparent 70%),
+    radial-gradient(40% 34% at 62% 92%, rgba(255,120,170,.07), transparent 72%);
+}
+@keyframes ui-aura{
+  from{transform:translate3d(-1.5%,-1%,0) scale(1)}
+  to{transform:translate3d(2.5%,1.5%,0) scale(1.07)}
 }
 ::selection{background:rgba(120,140,255,.35)}
 
@@ -42,16 +60,21 @@ html[data-theme="dark"] body{
   background:var(--header);
   backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid var(--line);
+  transition:background-color .3s var(--e-soft),border-color .3s var(--e-soft),box-shadow .3s var(--e-soft);
+  animation:ui-head-in .6s var(--e-out) backwards;
 }
+@keyframes ui-head-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.top.scrolled{box-shadow:0 10px 30px rgba(0,0,0,.28);border-bottom-color:var(--line2)}
+html[data-theme="light"] .top.scrolled{box-shadow:0 10px 28px rgba(20,25,40,.08)}
 .brand{display:flex;align-items:center;gap:11px;flex:none}
 .mark{
   width:24px;height:24px;border-radius:50%;flex:none;
   background:conic-gradient(from 0deg,#43d9ff,#8b7cff,#ff4d8d,#43d9ff);
   -webkit-mask:radial-gradient(circle,transparent 8px,#000 9px);
   mask:radial-gradient(circle,transparent 8px,#000 9px);
-  animation:spin 7s linear infinite;
+  animation:ui-mark-spin 7s linear infinite;
 }
-@keyframes spin{to{transform:rotate(1turn)}}
+@keyframes ui-mark-spin{to{transform:rotate(1turn)}}
 .brand h1{font-size:15px;font-weight:650;margin:0;letter-spacing:.01em}
 .brand p{font:400 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--tx3);margin:4px 0 0;letter-spacing:.1em}
 .tools{display:flex;align-items:center;gap:8px;margin-left:auto}
@@ -70,13 +93,16 @@ html[data-theme="dark"] body{
   background:var(--surface2); color:var(--tx2);
   border:1px solid var(--line); border-radius:10px;
   padding:9px 12px; font-size:12px; font-family:inherit;
-  cursor:pointer; transition:.2s; white-space:nowrap;
+  cursor:pointer; white-space:nowrap;
+  transition:color .2s var(--e-soft),border-color .2s var(--e-soft),background-color .2s var(--e-soft),transform .18s var(--e-out);
 }
-.ghost:hover{color:var(--tx);border-color:var(--line2)}
+.ghost:hover{color:var(--tx);border-color:var(--line2);transform:translateY(-1px)}
+.ghost:active{transform:translateY(0) scale(.97);transition-duration:.08s}
 .ghost[aria-pressed="true"]{color:var(--accent2);border-color:rgba(67,217,255,.4);background:rgba(67,217,255,.08)}
 
 /* ---------- layout ---------- */
 main{
+  position:relative; z-index:1;
   display:grid; grid-template-columns:172px minmax(0,1fr);
   gap:28px; padding:26px 28px 60px; max-width:1560px; margin:0 auto;
   align-items:start;
@@ -91,35 +117,55 @@ main{
   background:none;border:0;border-radius:9px;
   padding:9px 10px;cursor:pointer;text-align:left;
   color:var(--tx2);font-size:12.5px;font-family:inherit;
-  transition:background .18s,color .18s;
+  transition:background-color .2s var(--e-soft),color .2s var(--e-soft),transform .25s var(--e-out);
+  animation:ui-rail-in .5s var(--e-out) backwards; animation-delay:var(--d,0ms);
 }
-.chip:hover{background:var(--surface2);color:var(--tx)}
+@keyframes ui-rail-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.chip:hover{background:var(--surface2);color:var(--tx);transform:translateX(2px)}
+.chip:active{transform:translateX(2px) scale(.98)}
 .chip .n{
   margin-left:auto;font:400 9.5px/1 ui-monospace,monospace;
   color:var(--tx3);min-width:14px;text-align:right;
+  transition:color .2s var(--e-soft);
 }
 .chip[aria-pressed="true"]{background:var(--surface2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line)}
 .chip[aria-pressed="true"] .n{color:var(--accent2)}
 .chip[aria-pressed="true"]::before{
   content:"";width:3px;height:3px;border-radius:50%;
   background:var(--accent2);box-shadow:0 0 8px var(--accent2);
+  animation:ui-dot .4s var(--e-out);
 }
+@keyframes ui-dot{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* ---------- grid ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:16px}
 .card{
+  position:relative; isolation:isolate;
   background:var(--surface); border:1px solid var(--line);
   border-radius:16px; overflow:hidden; cursor:pointer;
-  transition:transform .38s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .38s;
+  transition:transform .42s var(--e-out),border-color .3s var(--e-soft),box-shadow .42s var(--e-out),background-color .35s var(--e-soft);
+  animation:ui-card-in .6s var(--e-out) backwards; animation-delay:var(--d,0ms);
 }
-.card:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:var(--shadow)}
+@keyframes ui-card-in{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+/* 跟随鼠标的柔光，替代生硬的高亮 */
+.card::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
+  background:radial-gradient(240px circle at var(--mx,50%) var(--my,0%), var(--glow), transparent 72%);
+  opacity:0;transition:opacity .35s var(--e-soft);
+}
+.card:hover::after{opacity:1}
+.card:hover{transform:translateY(-4px);border-color:var(--line2);box-shadow:var(--shadow)}
+.card:active{transform:translateY(-1px) scale(.994);transition-duration:.12s}
+.card:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .stage{
   height:186px; display:grid; place-items:center; position:relative; overflow:hidden;
   background-color:var(--stage);
   background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
   background-size:18px 18px;
   border-bottom:1px solid var(--line);
+  transition:background-position .7s var(--e-out);
 }
+.card:hover .stage{background-position:7px 7px}
 .card-body{padding:13px 15px 15px}
 .card-top{display:flex;align-items:center;gap:8px}
 .card-top h3{margin:0;font-size:14.5px;font-weight:620;letter-spacing:.01em}
@@ -141,20 +187,25 @@ main{
 .kw.more{color:var(--tx3)}
 .tune{
   margin-left:auto;background:none;border:0;padding:2px 0;cursor:pointer;
-  font:400 11px/1 inherit;color:var(--accent);opacity:.75;transition:opacity .2s;
+  font:400 11px/1 inherit;color:var(--accent);opacity:.75;
+  transition:opacity .2s var(--e-soft),transform .28s var(--e-out);
 }
-.card:hover .tune{opacity:1}
+.card:hover .tune{opacity:1;transform:translateX(2px)}
 
 /* ---------- empty / footer ---------- */
 .empty{
   padding:60px 20px;text-align:center;color:var(--tx3);
   border:1px dashed var(--line);border-radius:16px;font-size:13px;
+  animation:ui-fade .45s var(--e-out) backwards;
 }
+@keyframes ui-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .empty b{display:block;color:var(--tx2);margin-bottom:8px;font-weight:500;font-size:14px}
 .ingest{
   margin-top:44px;padding:24px 26px;border:1px solid var(--line);
   border-radius:16px;background:var(--surface);
   display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;
+  animation:ui-fade .6s var(--e-out) .12s backwards;
+  transition:background-color .35s var(--e-soft),border-color .3s var(--e-soft);
 }
 .ingest h2{margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:.02em}
 .ingest p{margin:0;font-size:12.5px;line-height:1.7;color:var(--tx2);max-width:520px}
@@ -168,15 +219,37 @@ main{
 /* ---------- modal ---------- */
 .modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:22px}
 .modal[hidden]{display:none}
-.mbd{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.mbd{
+  position:absolute;inset:0;background:rgba(0,0,0,.62);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  animation:ui-veil .3s var(--e-soft) backwards;
+}
+@keyframes ui-veil{from{opacity:0}to{opacity:1}}
 .panel{
   position:relative;width:min(1010px,100%);max-height:88vh;
   background:var(--surface);border:1px solid var(--line2);border-radius:20px;
   display:grid;grid-template-columns:1.02fr .98fr;overflow:hidden;
   box-shadow:0 40px 120px rgba(0,0,0,.62);
-  animation:panel-in .32s cubic-bezier(.2,.85,.2,1);
+  animation:ui-panel .46s cubic-bezier(.16,1.02,.3,1) backwards;
+  transition:opacity .16s var(--e-soft),transform .16s var(--e-soft);
 }
-@keyframes panel-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes ui-panel{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:none}}
+.modal.closing .mbd{opacity:0;transition:opacity .16s var(--e-soft)}
+.modal.closing .panel{opacity:0;transform:translateY(6px) scale(.99)}
+/* 弹窗内容按层进入，避免"啪"地整块出现 */
+.p-right > *{animation:ui-fade .5s var(--e-out) backwards}
+.p-right > *:nth-child(1){animation-delay:.07s}
+.p-right > *:nth-child(2){animation-delay:.12s}
+.p-right > *:nth-child(3){animation-delay:.17s}
+.p-right > *:nth-child(4){animation-delay:.21s}
+.p-right > *:nth-child(5){animation-delay:.25s}
+.p-right > *:nth-child(6){animation-delay:.29s}
+.params .prow{animation:ui-fade .42s var(--e-out) backwards}
+.params .prow:nth-child(1){animation-delay:.1s}
+.params .prow:nth-child(2){animation-delay:.15s}
+.params .prow:nth-child(3){animation-delay:.2s}
+.params .prow:nth-child(4){animation-delay:.25s}
+.params .prow:nth-child(5){animation-delay:.3s}
 .x{
   position:absolute;top:12px;right:12px;z-index:5;
   width:26px;height:26px;border-radius:8px;border:1px solid var(--line);
@@ -259,6 +332,18 @@ input[type=range]::-moz-range-thumb{
 }
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
+/* ---------- 主题切换过渡 ---------- */
+html.theming .top,html.theming .card,html.theming .stage,html.theming .chip,
+html.theming .ingest,html.theming .ghost,html.theming .search input,
+html.theming .badge,html.theming .kw,html.theming .panel{
+  transition:background-color .4s var(--e-soft),color .4s var(--e-soft),
+             border-color .4s var(--e-soft),transform .42s var(--e-out),
+             box-shadow .42s var(--e-out);
+}
+#count{display:inline-block}
+#count.bump{animation:ui-bump .5s var(--e-out)}
+@keyframes ui-bump{0%{opacity:.2;transform:translateY(5px)}100%{opacity:1;transform:none}}
+
 /* ---------- pause ---------- */
 html[data-paused="1"] .stage *,
 html[data-paused="1"] .stage *::before,
@@ -268,6 +353,7 @@ html[data-paused="1"] .m-stage *::before,
 html[data-paused="1"] .m-stage *::after{
   animation-play-state:paused !important;
 }
+html[data-paused="1"] .aura{animation-play-state:paused}
 
 /* ---------- responsive ---------- */
 @media (max-width:900px){
@@ -294,12 +380,16 @@ html[data-paused="1"] .m-stage *::after{
   .ptitle h2{font-size:18px}
 }
 @media (prefers-reduced-motion:reduce){
-  .mark{animation:none}
-  .panel{animation:none}
+  .mark,.aura,.top,.chip,.card,.empty,.ingest,.mbd,.panel,
+  .p-right>*,.params .prow{animation:none !important}
+  .card:hover,.chip:hover,.ghost:hover,.card:active,.ghost:active{transform:none}
+  .stage{transition:none}
+  .card::after{display:none}
 }
 </style>
 </head>
 <body>
+<div class="aura" aria-hidden="true"></div>
 
 <header class="top">
   <div class="brand">
@@ -373,6 +463,7 @@ html[data-paused="1"] .m-stage *::after{
   var toast = document.getElementById('toast');
 
   var state = { q: '', cat: 'all' };
+  var lastCount = -1;
   var cardCleanups = [];
   var modalCleanup = null;
 
@@ -432,6 +523,8 @@ html[data-paused="1"] .m-stage *::after{
       return '<button class="chip" data-cat="' + c.id + '" aria-pressed="' + (state.cat === c.id) + '">'
         + c.name + '<span class="n">' + n + '</span></button>';
     }).join('');
+    var chips = rail.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) chips[i].style.setProperty('--d', (60 + i * 26) + 'ms');
   }
 
   /* ---------- grid ---------- */
@@ -469,6 +562,12 @@ html[data-paused="1"] .m-stage *::after{
     });
     empty.hidden = list.length > 0;
     countEl.textContent = list.length;
+    countEl.classList.remove('bump');
+    void countEl.offsetWidth;
+    if (list.length !== lastCount) countEl.classList.add('bump');
+    lastCount = list.length;
+    var cards = grid.querySelectorAll('.card');
+    for (var i = 0; i < cards.length; i++) cards[i].style.setProperty('--d', Math.min(i, 9) * 32 + 'ms');
     Array.prototype.forEach.call(rail.querySelectorAll('.chip'), function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.cat === state.cat));
     });
@@ -477,6 +576,8 @@ html[data-paused="1"] .m-stage *::after{
   /* ---------- modal ---------- */
   function openModal(fx) {
     if (modalCleanup) { try { modalCleanup(); } catch (e) {} modalCleanup = null; }
+    clearTimeout(closeTimer);
+    modal.classList.remove('closing');
     mStage.removeAttribute('style');
     var vals = defaults(fx);
 
@@ -520,11 +621,18 @@ html[data-paused="1"] .m-stage *::after{
     document.body.style.overflow = 'hidden';
   }
 
+  var closeTimer;
   function closeModal() {
-    modal.hidden = true;
+    if (modal.hidden) return;
     document.body.style.overflow = '';
     if (modalCleanup) { try { modalCleanup(); } catch (e) {} modalCleanup = null; }
-    mStage.innerHTML = '';
+    modal.classList.add('closing');
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function () {
+      modal.hidden = true;
+      modal.classList.remove('closing');
+      mStage.innerHTML = '';
+    }, 170);
   }
 
   /* ---------- toast ---------- */
@@ -535,6 +643,28 @@ html[data-paused="1"] .m-stage *::after{
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toast.classList.remove('on'); }, 1600);
   }
+
+  /* ---------- 卡片跟随鼠标的柔光 ---------- */
+  var spotEl = null, spotX = 0, spotY = 0, spotRaf = 0;
+  grid.addEventListener('pointermove', function (e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    spotEl = card; spotX = e.clientX; spotY = e.clientY;
+    if (spotRaf) return;
+    spotRaf = requestAnimationFrame(function () {
+      spotRaf = 0;
+      if (!spotEl) return;
+      var r = spotEl.getBoundingClientRect();
+      spotEl.style.setProperty('--mx', (spotX - r.left) + 'px');
+      spotEl.style.setProperty('--my', (spotY - r.top) + 'px');
+    });
+  });
+
+  /* ---------- 滚动时顶栏加重 ---------- */
+  var topbar = document.querySelector('.top');
+  function syncTop() { topbar.classList.toggle('scrolled', window.scrollY > 6); }
+  window.addEventListener('scroll', syncTop, { passive: true });
+  syncTop();
 
   /* ---------- events ---------- */
   rail.addEventListener('click', function (e) {
@@ -597,7 +727,11 @@ html[data-paused="1"] .m-stage *::after{
   var themeBtn = document.getElementById('theme');
   function syncThemeBtn() { themeBtn.textContent = root.dataset.theme === 'dark' ? '浅色' : '深色'; }
   syncThemeBtn();
+  var themeTimer;
   themeBtn.addEventListener('click', function () {
+    root.classList.add('theming');
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(function () { root.classList.remove('theming'); }, 480);
     root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
     try { localStorage.setItem('mfx-theme', root.dataset.theme); } catch (e) {}
     syncThemeBtn();
