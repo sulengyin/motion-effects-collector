@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动效收集器 · Motion Lexicon</title>
+<style>
+:root{
+  --bg:#07080b; --surface:#0e1015; --surface2:#12151b; --header:rgba(7,8,11,.74);
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.17);
+  --tx:#e9ecf3; --tx2:#98a0b2; --tx3:#666e82;
+  --accent:#8b8cff; --accent2:#43d9ff; --stage:#0a0c11;
+  --shadow:0 24px 60px rgba(0,0,0,.55);
+}
+html[data-theme="light"]{
+  --bg:#f2f3f7; --surface:#ffffff; --surface2:#f7f8fb; --header:rgba(247,248,251,.82);
+  --line:rgba(12,16,28,.1); --line2:rgba(12,16,28,.22);
+  --tx:#12141c; --tx2:#565d6e; --tx3:#8b91a1;
+  --shadow:0 18px 44px rgba(20,25,40,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+html[data-theme="dark"] body{
+  background-image:
+    radial-gradient(900px 500px at 12% -10%, rgba(80,90,255,.13), transparent 70%),
+    radial-gradient(700px 420px at 92% 0%, rgba(0,190,255,.09), transparent 70%);
+  background-attachment:fixed;
+}
+::selection{background:rgba(120,140,255,.35)}
+
+/* ---------- header ---------- */
+.top{
+  position:sticky; top:0; z-index:30;
+  display:flex; align-items:center; gap:20px;
+  padding:14px 28px;
+  background:var(--header);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:11px;flex:none}
+.mark{
+  width:24px;height:24px;border-radius:50%;flex:none;
+  background:conic-gradient(from 0deg,#43d9ff,#8b7cff,#ff4d8d,#43d9ff);
+  -webkit-mask:radial-gradient(circle,transparent 8px,#000 9px);
+  mask:radial-gradient(circle,transparent 8px,#000 9px);
+  animation:spin 7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(1turn)}}
+.brand h1{font-size:15px;font-weight:650;margin:0;letter-spacing:.01em}
+.brand p{font:400 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--tx3);margin:4px 0 0;letter-spacing:.1em}
+.tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.search{position:relative;display:flex;align-items:center}
+.search svg{position:absolute;left:11px;width:13px;height:13px;stroke:var(--tx3);fill:none;stroke-width:1.8;pointer-events:none}
+.search input{
+  width:272px; padding:9px 12px 9px 32px;
+  background:var(--surface2); color:var(--tx);
+  border:1px solid var(--line); border-radius:10px;
+  font-size:12.5px; font-family:inherit; outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+.search input::placeholder{color:var(--tx3)}
+.search input:focus{border-color:var(--line2);box-shadow:0 0 0 3px rgba(120,140,255,.14)}
+.ghost{
+  background:var(--surface2); color:var(--tx2);
+  border:1px solid var(--line); border-radius:10px;
+  padding:9px 12px; font-size:12px; font-family:inherit;
+  cursor:pointer; transition:.2s; white-space:nowrap;
+}
+.ghost:hover{color:var(--tx);border-color:var(--line2)}
+.ghost[aria-pressed="true"]{color:var(--accent2);border-color:rgba(67,217,255,.4);background:rgba(67,217,255,.08)}
+
+/* ---------- layout ---------- */
+main{
+  display:grid; grid-template-columns:172px minmax(0,1fr);
+  gap:28px; padding:26px 28px 60px; max-width:1560px; margin:0 auto;
+  align-items:start;
+}
+.rail{position:sticky;top:86px;display:flex;flex-direction:column;gap:2px}
+.rail .rl{
+  font:400 9.5px/1 ui-monospace,monospace;color:var(--tx3);
+  letter-spacing:.16em;margin:0 0 10px 10px;
+}
+.chip{
+  display:flex;align-items:center;gap:8px;
+  background:none;border:0;border-radius:9px;
+  padding:9px 10px;cursor:pointer;text-align:left;
+  color:var(--tx2);font-size:12.5px;font-family:inherit;
+  transition:background .18s,color .18s;
+}
+.chip:hover{background:var(--surface2);color:var(--tx)}
+.chip .n{
+  margin-left:auto;font:400 9.5px/1 ui-monospace,monospace;
+  color:var(--tx3);min-width:14px;text-align:right;
+}
+.chip[aria-pressed="true"]{background:var(--surface2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line)}
+.chip[aria-pressed="true"] .n{color:var(--accent2)}
+.chip[aria-pressed="true"]::before{
+  content:"";width:3px;height:3px;border-radius:50%;
+  background:var(--accent2);box-shadow:0 0 8px var(--accent2);
+}
+
+/* ---------- grid ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:16px}
+.card{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:16px; overflow:hidden; cursor:pointer;
+  transition:transform .38s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .38s;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:var(--shadow)}
+.stage{
+  height:186px; display:grid; place-items:center; position:relative; overflow:hidden;
+  background-color:var(--stage);
+  background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:18px 18px;
+  border-bottom:1px solid var(--line);
+}
+.card-body{padding:13px 15px 15px}
+.card-top{display:flex;align-items:center;gap:8px}
+.card-top h3{margin:0;font-size:14.5px;font-weight:620;letter-spacing:.01em}
+.badge{
+  margin-left:auto;font:400 9.5px/1 ui-monospace,monospace;
+  color:var(--tx3);letter-spacing:.08em;
+  border:1px solid var(--line);border-radius:5px;padding:3px 6px;flex:none;
+}
+.card-en{margin:5px 0 0;font:400 10px/1 ui-monospace,monospace;color:var(--tx3);letter-spacing:.06em}
+.card-def{
+  margin:9px 0 0;font-size:12.5px;line-height:1.68;color:var(--tx2);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.card-foot{display:flex;align-items:center;gap:6px;margin-top:13px}
+.kw{
+  font:400 9.5px/1 ui-monospace,monospace;color:var(--tx3);
+  background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:4px 6px;
+}
+.kw.more{color:var(--tx3)}
+.tune{
+  margin-left:auto;background:none;border:0;padding:2px 0;cursor:pointer;
+  font:400 11px/1 inherit;color:var(--accent);opacity:.75;transition:opacity .2s;
+}
+.card:hover .tune{opacity:1}
+
+/* ---------- empty / footer ---------- */
+.empty{
+  padding:60px 20px;text-align:center;color:var(--tx3);
+  border:1px dashed var(--line);border-radius:16px;font-size:13px;
+}
+.empty b{display:block;color:var(--tx2);margin-bottom:8px;font-weight:500;font-size:14px}
+.ingest{
+  margin-top:44px;padding:24px 26px;border:1px solid var(--line);
+  border-radius:16px;background:var(--surface);
+  display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;
+}
+.ingest h2{margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:.02em}
+.ingest p{margin:0;font-size:12.5px;line-height:1.7;color:var(--tx2);max-width:520px}
+.ingest .flow{
+  margin-left:auto;display:flex;align-items:center;gap:7px;
+  font:400 10px/1 ui-monospace,monospace;color:var(--tx3);letter-spacing:.05em;flex-wrap:wrap;
+}
+.ingest .flow s{text-decoration:none;color:var(--line2)}
+.tips{margin-top:12px;font:400 10.5px/1.7 ui-monospace,monospace;color:var(--tx3)}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:22px}
+.modal[hidden]{display:none}
+.mbd{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.panel{
+  position:relative;width:min(1010px,100%);max-height:88vh;
+  background:var(--surface);border:1px solid var(--line2);border-radius:20px;
+  display:grid;grid-template-columns:1.02fr .98fr;overflow:hidden;
+  box-shadow:0 40px 120px rgba(0,0,0,.62);
+  animation:panel-in .32s cubic-bezier(.2,.85,.2,1);
+}
+@keyframes panel-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.x{
+  position:absolute;top:12px;right:12px;z-index:5;
+  width:26px;height:26px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface);color:var(--tx2);cursor:pointer;
+  font-size:14px;line-height:1;display:grid;place-items:center;
+}
+.x:hover{color:var(--tx);border-color:var(--line2)}
+.p-left{padding:18px;border-right:1px solid var(--line);min-width:0}
+.m-stage{
+  height:296px;border-radius:14px;display:grid;place-items:center;
+  background-color:var(--stage);
+  background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:18px 18px;
+  border:1px solid var(--line);overflow:hidden;position:relative;
+}
+.params{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+.prow{display:grid;grid-template-columns:74px 1fr 48px;align-items:center;gap:12px}
+.pl{font-size:11.5px;color:var(--tx2)}
+.pv{font:400 10.5px/1 ui-monospace,monospace;color:var(--accent2);text-align:right}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;height:3px;border-radius:3px;
+  background:var(--line2);outline:none;width:100%;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;
+  background:var(--tx);border:2px solid var(--surface);cursor:pointer;
+  box-shadow:0 0 0 1px var(--line2);
+}
+input[type=range]::-moz-range-thumb{
+  width:11px;height:11px;border-radius:50%;background:var(--tx);
+  border:2px solid var(--surface);cursor:pointer;
+}
+.p-right{padding:22px 24px 24px;overflow-y:auto;min-width:0}
+.p-right::-webkit-scrollbar{width:8px}
+.p-right::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.ptitle{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding-right:24px}
+.ptitle h2{margin:0;font-size:21px;font-weight:640;letter-spacing:.01em}
+.ptitle span{font:400 10.5px/1 ui-monospace,monospace;color:var(--tx3);letter-spacing:.06em}
+.pdef{margin:14px 0 0;font-size:13px;line-height:1.78;color:var(--tx2)}
+.sect{margin-top:19px}
+.sect h3{
+  margin:0 0 9px;font:400 9.5px/1 ui-monospace,monospace;
+  color:var(--tx3);letter-spacing:.18em;
+}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  font:400 10.5px/1 ui-monospace,monospace;color:var(--tx2);
+  background:var(--surface2);border:1px solid var(--line);
+  border-radius:6px;padding:6px 8px;
+}
+.note{font-size:12px;line-height:1.75;color:var(--tx2);margin:0}
+.note b{color:var(--tx);font-weight:550}
+.codebox{position:relative;margin-top:9px}
+.codebox pre{
+  margin:0;padding:14px 14px 16px;border-radius:11px;
+  background:#07080c;border:1px solid rgba(255,255,255,.07);
+  max-height:286px;overflow:auto;
+}
+.codebox code{
+  font:400 11px/1.72 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:#c3cde3;white-space:pre;display:block;
+}
+.codebox pre::-webkit-scrollbar{width:7px;height:7px}
+.codebox pre::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
+.copy{
+  position:absolute;top:9px;right:9px;
+  background:rgba(255,255,255,.07);color:#cfd8ea;
+  border:1px solid rgba(255,255,255,.12);border-radius:7px;
+  padding:5px 9px;font-size:10px;font-family:inherit;cursor:pointer;
+  transition:.2s;
+}
+.copy:hover{background:rgba(255,255,255,.14)}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);
+  background:var(--tx);color:var(--bg);border-radius:9px;
+  padding:9px 16px;font-size:12px;opacity:0;pointer-events:none;
+  transition:.28s cubic-bezier(.2,.8,.2,1);z-index:80;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- pause ---------- */
+html[data-paused="1"] .stage *,
+html[data-paused="1"] .stage *::before,
+html[data-paused="1"] .stage *::after,
+html[data-paused="1"] .m-stage *,
+html[data-paused="1"] .m-stage *::before,
+html[data-paused="1"] .m-stage *::after{
+  animation-play-state:paused !important;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .top{flex-wrap:wrap;padding:12px 16px;gap:12px}
+  .tools{width:100%}
+  .search{flex:1}
+  .search input{width:100%}
+  main{grid-template-columns:1fr;padding:16px 16px 48px;gap:16px}
+  .rail{
+    position:static;flex-direction:row;overflow-x:auto;gap:6px;
+    padding-bottom:2px;margin:0 -16px;padding-left:16px;padding-right:16px;
+  }
+  .rail::-webkit-scrollbar{display:none}
+  .rail .rl{display:none}
+  .chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:7px 11px}
+  .chip .n{margin-left:5px}
+  .chip[aria-pressed="true"]::before{display:none}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(232px,1fr))}
+  .panel{grid-template-columns:1fr;max-height:92vh;overflow-y:auto}
+  .p-left{border-right:0;border-bottom:1px solid var(--line);padding:14px}
+  .m-stage{height:210px}
+  .p-right{padding:18px 16px 26px;overflow:visible}
+  .ingest .flow{margin-left:0}
+  .ptitle h2{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  .mark{animation:none}
+  .panel{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1>动效收集器</h1>
+      <p>MOTION LEXICON · <span id="count">0</span> EFFECTS</p>
+    </div>
+  </div>
+  <div class="tools">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <input id="q" type="search" placeholder="搜索：边缘流光 / edge glow / 聚光" autocomplete="off">
+    </div>
+    <button class="ghost" id="pause" aria-pressed="false">暂停动效</button>
+    <button class="ghost" id="theme">浅色</button>
+  </div>
+</header>
+
+<main>
+  <nav class="rail" id="rail">
+    <div class="rl">CATEGORY</div>
+  </nav>
+  <section>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>
+      <b>没有匹配的效果</b>
+      把这个词直接发给我，说「收进动效收集器」，我来命名、实现并归档。
+    </div>
+
+    <section class="ingest">
+      <div>
+        <h2>怎么继续投喂</h2>
+        <p>把一句话、一张截图或一段视频发给我，说「收进动效收集器」。我按固定动作处理：识别 → 归类 → 中英命名 → 拆参数 → 写实现 → 归档进这个页面。</p>
+        <p class="tips">不确定叫什么也没关系，描述"它看起来像什么"即可。</p>
+      </div>
+      <div class="flow">
+        <span>识别</span><s>→</s><span>命名</span><s>→</s><span>提参</span><s>→</s><span>实现</span><s>→</s><span>归档</span>
+      </div>
+    </section>
+  </section>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="mbd" data-close></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="mtitle">
+    <button class="x" data-close aria-label="关闭">×</button>
+    <div class="p-left">
+      <div class="m-stage" id="m-stage"></div>
+      <div class="params" id="m-params"></div>
+    </div>
+    <div class="p-right" id="m-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   动效收集器 · 效果数据源
+   新增效果：在 EFFECTS 数组末尾追加一条即可，index.html 无需改动。
+   字段规范见 docs/SCHEMA.md
+   ============================================================ */
+
+const CATEGORIES = [
+  { id: 'light',       name: '光效',     en: 'Light',      desc: '流光、聚光、辉光' },
+  { id: 'material',    name: '材质',     en: 'Material',   desc: '玻璃、金属、颗粒' },
+  { id: 'transform',   name: '形变',     en: 'Transform',  desc: '倾斜、磁吸、挤压' },
+  { id: 'motion',      name: '运动',     en: 'Motion',     desc: '缓动、弹簧、交错' },
+  { id: 'text',        name: '文字',     en: 'Text',       desc: '打字、浮现、滚动' },
+  { id: 'transition',  name: '转场',     en: 'Transition', desc: '遮罩、推进、共享元素' },
+  { id: 'interaction', name: '交互反馈', en: 'Feedback',   desc: '涟漪、按压、悬浮' },
+  { id: 'ambient',     name: '环境',     en: 'Ambient',    desc: '粒子、流体、光场' }
+];
+
+/* 生成漂浮光点（粒子场用），确定性分布，避免每次渲染跳动 */
+function particleHTML(n) {
+  var out = '';
+  for (var i = 0; i < n; i++) {
+    var x = (i * 37 + 11) % 96;
+    var y = (i * 53 + 7) % 100;
+    var s = 1 + (i % 3);
+    var d = 6 + (i % 7);
+    var dl = -((i * 1.7) % d);
+    out += '<i style="left:' + x + '%;top:' + y + '%;width:' + s + 'px;height:' + s + 'px;'
+         + '--d:' + d + 's;--dl:' + dl.toFixed(1) + 's"></i>';
+  }
+  return out;
+}
+
+const EFFECTS = [
+
+  /* ---------------- 1. 光效 ---------------- */
+  {
+    id: 'edge-glow',
+    name: '边缘流光',
+    en: 'Edge Glow Sweep',
+    cat: 'light',
+    def: '一圈锥形渐变沿着元素边缘循环扫过，配合外发光形成"通电"感，常用于强调当前态与可交互卡片。',
+    keywords: ['边缘流光', '描边流光', '流光边框', '跑马灯边框', 'edge glow', 'border sweep', 'conic border', 'rotating border'],
+    params: [
+      { k: '--eg-dur', l: '流动周期', min: 1, max: 8, step: 0.1, v: 4, u: 's' },
+      { k: '--eg-blur', l: '外发光', min: 0, max: 20, step: 1, v: 10, u: 'px' }
+    ],
+    stage: '<div class="eg-wrap"><div class="eg-glow"></div><div class="eg-card"><span>EDGE GLOW</span></div></div>',
+    css: `
+.eg-wrap{position:relative;width:190px;height:104px;display:grid;place-items:center}
+.eg-glow{position:absolute;inset:0;border-radius:16px;background:conic-gradient(from 0deg,transparent 0 55%,#43d9ff 70%,#9b8bff 82%,transparent 92%);filter:blur(var(--eg-blur,10px));opacity:.8;animation:eg-spin var(--eg-dur,4s) linear infinite}
+.eg-card{position:relative;width:180px;height:96px;border-radius:14px;background:#0d0f14;overflow:hidden;display:grid;place-items:center}
+.eg-card::before{content:"";position:absolute;inset:-45%;background:conic-gradient(from 0deg,transparent 0 58%,#43d9ff 72%,#a08bff 84%,transparent 94%);animation:eg-spin var(--eg-dur,4s) linear infinite}
+.eg-card::after{content:"";position:absolute;inset:1.5px;border-radius:12.5px;background:#0b0d12}
+.eg-card span{position:relative;z-index:2;font:600 10px/1 ui-monospace,monospace;letter-spacing:.24em;color:#c8d0e4}
+@keyframes eg-spin{to{transform:rotate(1turn)}}`,
+    code: `<!-- HTML -->
+<div class="glow-card">EDGE GLOW</div>
+
+<style>
+.glow-card{
+  position:relative; display:grid; place-items:center;
+  width:180px; height:96px; border-radius:14px;
+  background:#0b0d12; overflow:hidden;
+}
+/* 内层光带 */
+.glow-card::before{
+  content:""; position:absolute; inset:-45%;
+  background:conic-gradient(from 0deg,
+    transparent 0 58%, #43d9ff 72%, #a08bff 84%, transparent 94%);
+  animation:spin 4s linear infinite;
+}
+/* 内层遮罩，只留 1.5px 描边 */
+.glow-card::after{
+  content:""; position:absolute; inset:1.5px;
+  border-radius:12.5px; background:#0b0d12;
+}
+.glow-card>*{ position:relative; z-index:2 }
+@keyframes spin{ to{ transform:rotate(1turn) } }
+</style>`,
+    usage: '强调主 CTA、当前选中卡片、AI 生成中的容器。',
+    note: '必须给内层留遮罩，否则会变成整块旋转色盘；外发光层用 blur 单独做，别依赖 box-shadow。',
+    variants: ['单向扫光（linear 而非 conic）', '霓虹脉冲（透明度呼吸）']
+  },
+
+  /* ---------------- 2. 光效 ---------------- */
+  {
+    id: 'spotlight',
+    name: '聚光跟随',
+    en: 'Cursor Spotlight',
+    cat: 'light',
+    def: '一团径向光斑跟随指针在容器内移动，制造"手电筒照在暗面"的局部提亮，能显著提升大色块区域的探索欲。',
+    keywords: ['聚光', '聚光灯', '光斑跟随', '手电筒', 'spotlight', 'cursor light', 'radial follow', 'torch'],
+    params: [
+      { k: '--sp-r', l: '光斑半径', min: 50, max: 200, step: 5, v: 130, u: 'px' },
+      { k: '--sp-a', l: '光照强度', min: 0.05, max: 0.7, step: 0.01, v: 0.32, u: '' }
+    ],
+    stage: '<div class="sp-card"><b>SPOTLIGHT</b></div>',
+    css: `
+.sp-card{position:relative;width:210px;height:120px;border-radius:14px;background:#0b0d12;border:1px solid rgba(255,255,255,.07);overflow:hidden;display:grid;place-items:center;cursor:crosshair}
+.sp-card::before{content:"";position:absolute;inset:0;background:radial-gradient(var(--sp-r,130px) circle at var(--mx,50%) var(--my,50%),rgba(130,165,255,var(--sp-a,.32)),transparent 72%)}
+.sp-card b{position:relative;font:600 10px/1 ui-monospace,monospace;letter-spacing:.22em;color:#8d99b6}`,
+    mount: function (el) {
+      var box = el.querySelector('.sp-card');
+      if (!box) return;
+      var move = function (e) {
+        var r = box.getBoundingClientRect();
+        box.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+        box.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+      };
+      box.addEventListener('pointermove', move);
+      return function () { box.removeEventListener('pointermove', move); };
+    },
+    code: `<!-- HTML -->
+<div class="spot">SPOTLIGHT</div>
+
+<style>
+.spot{
+  position:relative; display:grid; place-items:center;
+  width:210px; height:120px; border-radius:14px;
+  background:#0b0d12; overflow:hidden;
+}
+.spot::before{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(130px circle at var(--mx,50%) var(--my,50%),
+    rgba(130,165,255,.32), transparent 72%);
+}
+</style>
+
+<script>
+el.addEventListener('pointermove', function (e) {
+  var r = el.getBoundingClientRect();
+  el.style.setProperty('--mx', (e.clientX - r.left) / r.width * 100 + '%');
+  el.style.setProperty('--my', (e.clientY - r.top) / r.height * 100 + '%');
+});
+<\/script>`,
+    usage: '深色首屏大标题区、数据看板、游戏化页面。',
+    note: '监听 pointermove 而非 mousemove 才能兼容触屏笔；别在移动端做，触屏没有 hover。',
+    variants: ['聚光 + 边框高亮（border 同步提亮）', '跟随延迟（加 transition 形成拖尾）']
+  },
+
+  /* ---------------- 3. 材质 ---------------- */
+  {
+    id: 'glassmorphism',
+    name: '玻璃拟态',
+    en: 'Glassmorphism',
+    cat: 'material',
+    def: '半透明面板配背景模糊与 1px 亮边，让底层色彩透出来，形成"毛玻璃悬浮片"。',
+    keywords: ['玻璃拟态', '毛玻璃', '磨砂玻璃', 'glassmorphism', 'frosted glass', 'backdrop blur', '亚克力'],
+    params: [
+      { k: '--gl-blur', l: '背景模糊', min: 0, max: 24, step: 1, v: 12, u: 'px' },
+      { k: '--gl-alpha', l: '面板不透明度', min: 0.02, max: 0.4, step: 0.01, v: 0.12, u: '' }
+    ],
+    stage: '<div class="gl-stage"><i class="gl-b1"></i><i class="gl-b2"></i><div class="gl-card"><b>Glass</b><small>BLUR + BORDER</small></div></div>',
+    css: `
+.gl-stage{position:relative;width:210px;height:126px;border-radius:14px;overflow:hidden;background:#0a0c11}
+.gl-stage i{position:absolute;border-radius:50%;filter:blur(20px)}
+.gl-b1{width:120px;height:120px;left:-24px;top:-30px;background:#3b5bff;opacity:.8}
+.gl-b2{width:110px;height:110px;right:-22px;bottom:-30px;background:#ff4d8d;opacity:.62}
+.gl-card{position:absolute;inset:22px 34px;border-radius:12px;display:grid;place-items:center;gap:3px;
+  background:rgba(255,255,255,var(--gl-alpha,.12));
+  border:1px solid rgba(255,255,255,.28);
+  -webkit-backdrop-filter:blur(var(--gl-blur,12px));backdrop-filter:blur(var(--gl-blur,12px));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 8px 24px rgba(0,0,0,.35)}
+.gl-card b{font:600 12px/1 -apple-system,"PingFang SC",sans-serif;color:#fff;letter-spacing:.06em}
+.gl-card small{font:400 8px/1 ui-monospace,monospace;color:rgba(255,255,255,.72);letter-spacing:.14em}`,
+    code: `<!-- HTML -->
+<div class="glass">Glass</div>
+
+<style>
+.glass{
+  position:relative;
+  padding:22px 34px; border-radius:12px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.28);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  /* 关键：顶部 1px 高光，决定"玻璃"而不是"灰块" */
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),
+             0 8px 24px rgba(0,0,0,.35);
+}
+</style>`,
+    usage: '浮层卡片、导航栏、弹窗、音乐/天气类界面。',
+    note: '背后必须有高饱和色块才有效果；纯暗底上做磨砂等于灰块。性能上 backdrop-filter 会触发合成层，别大面积叠用。',
+    variants: ['磨砂导航（配合滚动模糊渐显）', '玻璃 + 边缘流光']
+  },
+
+  /* ---------------- 4. 环境 ---------------- */
+  {
+    id: 'aurora-flow',
+    name: '极光流体',
+    en: 'Aurora Flow',
+    cat: 'ambient',
+    def: '多个高饱和模糊色团在暗底上缓慢漂移，用 screen 混合叠加出流动的光雾，是最省算力的"氛围背景"。',
+    keywords: ['极光', '流体渐变', '液态渐变', '光雾', 'aurora', 'mesh gradient', 'liquid gradient', 'blob background'],
+    params: [
+      { k: '--au-dur', l: '漂移周期', min: 6, max: 24, step: 1, v: 14, u: 's' },
+      { k: '--au-blur', l: '雾化模糊', min: 10, max: 50, step: 2, v: 30, u: 'px' }
+    ],
+    stage: '<div class="au-stage"><i class="au-1"></i><i class="au-2"></i><i class="au-3"></i><i class="au-4"></i></div>',
+    css: `
+.au-stage{position:relative;width:220px;height:130px;border-radius:14px;overflow:hidden;background:#05060a;isolation:isolate}
+.au-stage i{position:absolute;width:150px;height:150px;border-radius:50%;filter:blur(var(--au-blur,30px));mix-blend-mode:screen;opacity:.85;animation:au-f var(--au-dur,14s) ease-in-out infinite}
+.au-1{background:#1f6bff;left:-40px;top:-50px}
+.au-2{background:#a24bff;right:-40px;top:-20px;animation-delay:-3s}
+.au-3{background:#17d6a8;left:20px;bottom:-70px;animation-delay:-6s}
+.au-4{background:#ff4d6d;right:-10px;bottom:-60px;animation-delay:-9s}
+.au-stage::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 50%,transparent 40%,rgba(0,0,0,.55))}
+@keyframes au-f{0%,100%{transform:translate3d(0,0,0) scale(1)}33%{transform:translate3d(26px,-14px,0) scale(1.15)}66%{transform:translate3d(-18px,18px,0) scale(.92)}}`,
+    code: `<!-- HTML -->
+<div class="aurora">
+  <i style="--c:#1f6bff; left:-40px; top:-50px"></i>
+  <i style="--c:#a24bff; right:-40px; top:-20px"></i>
+  <i style="--c:#17d6a8; left:20px; bottom:-70px"></i>
+  <i style="--c:#ff4d6d; right:-10px; bottom:-60px"></i>
+</div>
+
+<style>
+.aurora{ position:relative; overflow:hidden; background:#05060a; isolation:isolate }
+.aurora i{
+  position:absolute; width:150px; height:150px; border-radius:50%;
+  background:var(--c);
+  filter:blur(30px);
+  mix-blend-mode:screen;              /* 决定"光雾"而不是"色块" */
+  animation:float 14s ease-in-out infinite;
+}
+.aurora i:nth-child(2){ animation-delay:-3s }
+.aurora i:nth-child(3){ animation-delay:-6s }
+.aurora i:nth-child(4){ animation-delay:-9s }
+@keyframes float{
+  0%,100%{ transform:translate3d(0,0,0) scale(1) }
+  33%    { transform:translate3d(26px,-14px,0) scale(1.15) }
+  66%    { transform:translate3d(-18px,18px,0) scale(.92) }
+}
+</style>`,
+    usage: '首屏背景、AI 生成等待态、发布页氛围底。',
+    note: '必须加 isolation:isolate，否则 screen 混合会漏到页面其他层。色团控制在 4 个以内，30px 以上模糊基本不吃 GPU。',
+    variants: ['极光 + 噪点颗粒', '极光 + 玻璃拟态卡片']
+  },
+
+  /* ---------------- 5. 形变 ---------------- */
+  {
+    id: 'tilt-3d',
+    name: '3D 倾斜',
+    en: '3D Tilt',
+    cat: 'transform',
+    def: '容器跟随指针在 X/Y 轴小角度旋转，内部元素用 translateZ 分层，形成"卡片被手指按住一角"的立体跟随。',
+    keywords: ['3D倾斜', '3D卡片', '视差倾斜', '跟随倾斜', '3d tilt', 'parallax tilt', 'perspective card', 'hover tilt'],
+    params: [
+      { k: '--tl-max', l: '最大角度', min: 4, max: 24, step: 1, v: 14, u: 'deg' },
+      { k: '--tl-dur', l: '回正时长', min: 0.1, max: 1, step: 0.05, v: 0.25, u: 's' }
+    ],
+    stage: '<div class="tl-wrap"><div class="tl-card"><b>TILT 3D</b></div></div>',
+    css: `
+.tl-wrap{width:190px;height:118px;perspective:700px}
+.tl-card{position:relative;width:100%;height:100%;border-radius:14px;border:1px solid rgba(255,255,255,.1);
+  background:linear-gradient(145deg,#1b2233,#0d1016 62%);display:grid;place-items:center;
+  transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform var(--tl-dur,.25s) ease-out;box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.tl-card b{transform:translateZ(28px);font:600 10px/1 ui-monospace,monospace;letter-spacing:.22em;color:#dfe6f5}
+.tl-card::after{content:"";position:absolute;inset:0;border-radius:14px;opacity:0;transition:opacity .25s;
+  background:radial-gradient(240px circle at var(--gx,50%) var(--gy,0%),rgba(255,255,255,.2),transparent 60%)}
+.tl-wrap:hover .tl-card::after{opacity:1}`,
+    mount: function (el) {
+      var wrap = el.querySelector('.tl-wrap');
+      var card = el.querySelector('.tl-card');
+      if (!wrap || !card) return;
+      var move = function (e) {
+        var max = parseFloat(getComputedStyle(el).getPropertyValue('--tl-max')) || 14;
+        var r = wrap.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width;
+        var y = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--ry', ((x - 0.5) * 2 * max).toFixed(2) + 'deg');
+        card.style.setProperty('--rx', ((0.5 - y) * 2 * max).toFixed(2) + 'deg');
+        card.style.setProperty('--gx', (x * 100).toFixed(0) + '%');
+        card.style.setProperty('--gy', (y * 100).toFixed(0) + '%');
+      };
+      var leave = function () {
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      };
+      wrap.addEventListener('pointermove', move);
+      wrap.addEventListener('pointerleave', leave);
+      return function () {
+        wrap.removeEventListener('pointermove', move);
+        wrap.removeEventListener('pointerleave', leave);
+      };
+    },
+    code: `<!-- HTML -->
+<div class="tilt-wrap">
+  <div class="tilt-card"><b>TILT 3D</b></div>
+</div>
+
+<style>
+.tilt-wrap{ perspective:700px }
+.tilt-card{
+  width:190px; height:118px; border-radius:14px;
+  transform-style:preserve-3d;
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform .25s ease-out;
+}
+.tilt-card b{ transform:translateZ(28px) }  /* 内层浮起 */
+</style>
+
+<script>
+wrap.onpointermove = function (e) {
+  var r = wrap.getBoundingClientRect();
+  var x = (e.clientX - r.left) / r.width  - .5;
+  var y = (e.clientY - r.top)  / r.height - .5;
+  card.style.setProperty('--ry', x * 28 + 'deg');
+  card.style.setProperty('--rx', -y * 28 + 'deg');
+};
+wrap.onpointerleave = function () {
+  card.style.setProperty('--rx', '0deg');
+  card.style.setProperty('--ry', '0deg');
+};
+<\/script>`,
+    usage: '产品卡、专辑封面、会员卡、任何"值得被拿起来看"的卡片。',
+    note: 'perspective 放在父级、preserve-3d 放在子级，缺一个就没有立体感。角度别超过 18 度，超过会晕。移动端用设备陀螺仪要谨慎。',
+    variants: ['指针光源叠加（glare）', '整卡磁吸位移 + 倾斜']
+  },
+
+  /* ---------------- 6. 形变 ---------------- */
+  {
+    id: 'magnetic',
+    name: '磁吸按钮',
+    en: 'Magnetic Button',
+    cat: 'transform',
+    def: '指针靠近时按钮向指针方向偏移，离开后用回弹曲线弹回原位，制造"被吸住"的手感。',
+    keywords: ['磁吸', '磁吸按钮', '吸附跟随', 'magnetic', 'magnetic button', 'magnet hover', 'snap cursor'],
+    params: [
+      { k: '--mg-strength', l: '吸附强度', min: 0, max: 1, step: 0.05, v: 0.42, u: '' },
+      { k: '--mg-dur', l: '回弹时长', min: 0.15, max: 1, step: 0.05, v: 0.45, u: 's' }
+    ],
+    stage: '<div class="mg-stage"><button class="mg-btn" type="button"><span>MAGNETIC</span></button></div>',
+    css: `
+.mg-stage{width:210px;height:120px;display:grid;place-items:center}
+.mg-btn{position:relative;padding:15px 26px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(180deg,#1c212c,#101318);color:#e6ebf7;cursor:pointer;
+  font:600 10px/1 ui-monospace,monospace;letter-spacing:.2em;
+  transform:translate(var(--tx,0),var(--ty,0));
+  transition:transform var(--mg-dur,.45s) cubic-bezier(.34,1.56,.64,1);
+  will-change:transform;box-shadow:0 10px 26px rgba(0,0,0,.45)}`,
+    mount: function (el) {
+      var stage = el.querySelector('.mg-stage');
+      var btn = el.querySelector('.mg-btn');
+      if (!stage || !btn) return;
+      var move = function (e) {
+        var s = parseFloat(getComputedStyle(el).getPropertyValue('--mg-strength')) || 0.42;
+        var r = btn.getBoundingClientRect();
+        btn.style.setProperty('--tx', ((e.clientX - (r.left + r.width / 2)) * s).toFixed(1) + 'px');
+        btn.style.setProperty('--ty', ((e.clientY - (r.top + r.height / 2)) * s).toFixed(1) + 'px');
+      };
+      var leave = function () {
+        btn.style.setProperty('--tx', '0px');
+        btn.style.setProperty('--ty', '0px');
+      };
+      stage.addEventListener('pointermove', move);
+      stage.addEventListener('pointerleave', leave);
+      return function () {
+        stage.removeEventListener('pointermove', move);
+        stage.removeEventListener('pointerleave', leave);
+      };
+    },
+    code: `<!-- HTML -->
+<div class="magnet">
+  <button class="btn">MAGNETIC</button>
+</div>
+
+<style>
+.btn{
+  transform:translate(var(--tx,0), var(--ty,0));
+  /* 回弹关键：末段系数 > 1 */
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+}
+</style>
+
+<script>
+wrap.addEventListener('pointermove', function (e) {
+  var r = btn.getBoundingClientRect();
+  btn.style.setProperty('--tx', (e.clientX - r.left - r.width  / 2) * .42 + 'px');
+  btn.style.setProperty('--ty', (e.clientY - r.top  - r.height / 2) * .42 + 'px');
+});
+wrap.addEventListener('pointerleave', function () {
+  btn.style.setProperty('--tx', '0px');
+  btn.style.setProperty('--ty', '0px');
+});
+<\/script>`,
+    usage: '主 CTA、定价页、作品集入口等需要"贵一点手感"的按钮。',
+    note: '偏移系数 0.3–0.5 最自然，1.0 会脱手；必须留 pointerleave 复位，否则触屏上会卡在偏移位。',
+    variants: ['内文反向偏移（视差）', '磁吸 + 边缘流光']
+  },
+
+  /* ---------------- 7. 运动 ---------------- */
+  {
+    id: 'stagger-in',
+    name: '交错入场',
+    en: 'Stagger In',
+    cat: 'motion',
+    def: '同组元素按顺序依次上浮淡入，用时间差代替一次性弹出，让列表"被逐个读出来"。',
+    keywords: ['交错入场', '错峰入场', '依次出现', '级联动画', 'stagger', 'staggered animation', 'cascade', 'list reveal'],
+    params: [
+      { k: '--st-gap', l: '间隔', min: 20, max: 200, step: 10, v: 80, u: 'ms' },
+      { k: '--st-dist', l: '位移距离', min: 4, max: 30, step: 2, v: 14, u: 'px' }
+    ],
+    stage: '<div class="st-list"><div class="st-row" style="--i:0"><i></i><span>01 &nbsp;DISCOVER</span></div><div class="st-row" style="--i:1"><i></i><span>02 &nbsp;DEFINE</span></div><div class="st-row" style="--i:2"><i></i><span>03 &nbsp;DESIGN</span></div><div class="st-row" style="--i:3"><i></i><span>04 &nbsp;DELIVER</span></div></div>',
+    css: `
+.st-list{width:180px;display:flex;flex-direction:column;gap:8px}
+.st-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);
+  animation:st-in var(--st-dur,5s) cubic-bezier(.2,.8,.2,1) infinite;
+  animation-delay:calc(calc(var(--i) * -1) * var(--st-gap,80ms))}
+.st-row i{width:5px;height:5px;border-radius:50%;background:#43d9ff;flex:none;box-shadow:0 0 8px #43d9ff}
+.st-row span{font:500 9px/1 ui-monospace,monospace;color:#aab3c9;letter-spacing:.1em}
+@keyframes st-in{
+  0%{opacity:0;transform:translateY(var(--st-dist,14px));filter:blur(5px)}
+  12%,74%{opacity:1;transform:none;filter:none}
+  88%,100%{opacity:0;transform:translateY(calc(var(--st-dist,14px) * -.6));filter:blur(4px)}}`,
+    code: `/* 列表项按 --i 递延；用负延迟保证每轮都保持错峰 */
+.item{
+  opacity:0;
+  animation:fade-up .5s cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay:calc(var(--i) * 80ms);
+}
+@keyframes fade-up{
+  from{ opacity:0; transform:translateY(14px); filter:blur(5px) }
+  to  { opacity:1; transform:none;            filter:none }
+}
+
+<!-- HTML：给每一项编号 -->
+<li class="item" style="--i:0">01</li>
+<li class="item" style="--i:1">02</li>
+<li class="item" style="--i:2">03</li>`,
+    usage: '列表首次渲染、卡片墙进场、聊天消息、报表行。',
+    note: '超过 8 项时把间隔压到 40ms 以内，否则最后一项要等 1s。加 filter:blur 能让入场更"软"，但很吃性能，移动端可去掉。',
+    variants: ['交错 + 3D 翻转', '交错 + 逐字浮现']
+  },
+
+  /* ---------------- 8. 运动 ---------------- */
+  {
+    id: 'spring-bounce',
+    name: '弹簧回弹',
+    en: 'Spring Bounce',
+    cat: 'motion',
+    def: '物体位移后不是停住，而是越过目标点再回弹几次，配合挤压拉伸（squash & stretch）产生真实重量感。',
+    keywords: ['弹簧', '回弹', '弹性', 'Q弹', 'spring', 'bounce', 'elastic', 'squash and stretch'],
+    params: [
+      { k: '--spr-h', l: '弹起高度', min: 10, max: 50, step: 2, v: 34, u: 'px' },
+      { k: '--spr-dur', l: '循环周期', min: 1, max: 4, step: 0.1, v: 2.4, u: 's' }
+    ],
+    stage: '<div class="spr-stage"><div class="spr-ball"></div></div>',
+    css: `
+.spr-stage{width:200px;height:120px;display:grid;align-items:end;justify-items:center;padding-bottom:26px;box-sizing:border-box}
+.spr-ball{width:44px;height:44px;border-radius:50%;background:linear-gradient(145deg,#8b7cff,#43d9ff);
+  box-shadow:0 0 26px rgba(80,160,255,.45);animation:spr-jump var(--spr-dur,2.4s) infinite}
+@keyframes spr-jump{
+  0%,6%{transform:translateY(0) scale(1.06,.92);animation-timing-function:cubic-bezier(.2,.9,.3,1)}
+  38%{transform:translateY(calc(var(--spr-h,34px) * -1)) scale(.96,1.05);animation-timing-function:cubic-bezier(.5,0,.9,.4)}
+  64%{transform:translateY(0) scale(1.12,.86);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  76%{transform:translateY(calc(var(--spr-h,34px) * -.26)) scale(1,1);animation-timing-function:cubic-bezier(.5,0,.9,.4)}
+  86%{transform:translateY(0) scale(1.05,.95);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+  94%,100%{transform:translateY(0) scale(1,1)}}`,
+    code: `/* 关键在 cubic-bezier 末段系数 > 1，产生越过再收回 */
+.bounce{
+  animation:jump 2.4s infinite;
+}
+@keyframes jump{
+  0%,6%  { transform:translateY(0) scale(1.06,.92); animation-timing-function:cubic-bezier(.2,.9,.3,1) }
+  38%    { transform:translateY(-34px) scale(.96,1.05); animation-timing-function:cubic-bezier(.5,0,.9,.4) }
+  64%    { transform:translateY(0) scale(1.12,.86); animation-timing-function:cubic-bezier(.34,1.56,.64,1) }
+  76%    { transform:translateY(-9px) }
+  86%    { transform:translateY(0) scale(1.05,.95) }
+  100%   { transform:translateY(0) scale(1,1) }
+}`,
+    usage: '点赞/收藏成功、下拉刷新、拖拽释放、游戏化反馈。',
+    note: '只在"落地瞬间"做挤压（scaleY<1），起跳时拉长；一旦每帧都缩放就会像果冻而不是物理。时长低于 200ms 就没有弹性可言。',
+    variants: ['果冻按钮（hover 缩放回弹）', '弹簧拖拽归位']
+  },
+
+  /* ---------------- 9. 文字 ---------------- */
+  {
+    id: 'typewriter',
+    name: '打字机',
+    en: 'Typewriter',
+    cat: 'text',
+    def: '文字按字符宽度逐步显示，配一条闪烁光标，天然带有"正在输入/正在生成"的叙事感。',
+    keywords: ['打字机', '打字效果', '逐字打印', '光标闪烁', 'typewriter', 'typing effect', 'caret', 'terminal'],
+    params: [
+      { k: '--tw-dur', l: '整句时长', min: 1, max: 7, step: 0.1, v: 3.2, u: 's' }
+    ],
+    stage: '<div class="tw-stage"><div class="tw">Motion is language</div></div>',
+    css: `
+.tw-stage{width:210px;height:120px;display:grid;place-items:center}
+.tw{font:600 14px/1.4 ui-monospace,monospace;color:#dfe6f5;white-space:nowrap;overflow:hidden;width:0;
+  border-right:2px solid #43d9ff;
+  animation:tw-type var(--tw-dur,3.2s) steps(18) infinite,tw-caret .8s step-end infinite}
+@keyframes tw-type{0%{width:0}64%{width:18ch}90%{width:18ch}100%{width:0}}
+@keyframes tw-caret{50%{border-color:transparent}}`,
+    code: `<!-- 18 个字符 → steps(18) + width:18ch -->
+<div class="typing">Motion is language</div>
+
+<style>
+.typing{
+  font-family:ui-monospace,monospace;
+  white-space:nowrap; overflow:hidden; width:0;
+  border-right:2px solid #43d9ff;
+  animation:
+    typing 3.2s steps(18) infinite,
+    caret .8s step-end infinite;
+}
+@keyframes typing{ 0%{width:0} 64%,90%{width:18ch} 100%{width:0} }
+@keyframes caret{ 50%{border-color:transparent} }
+</style>`,
+    usage: 'AI 回复首行、终端风格界面、个人签名、加载文案。',
+    note: 'steps(N) 的 N 必须等于字符数，且必须用等宽字体，否则中途会跳字。中文建议改用逐字 span，ch 单位对中文不准。',
+    variants: ['多句轮播（删字重打）', '打字机 + 逐字浮现混排']
+  },
+
+  /* ---------------- 10. 文字 ---------------- */
+  {
+    id: 'word-reveal',
+    name: '逐字浮现',
+    en: 'Character Reveal',
+    cat: 'text',
+    def: '每个字符从遮罩下方升起并轻微去模糊，形成"文字被一个字一个字托上来"的精致入场。',
+    keywords: ['逐字浮现', '文字上浮', '文字揭示', '遮罩揭示', 'character reveal', 'mask reveal', 'text stagger', 'clip text'],
+    params: [
+      { k: '--rv-gap', l: '字间延迟', min: 20, max: 180, step: 10, v: 70, u: 'ms' },
+      { k: '--rv-dur', l: '循环周期', min: 2, max: 6, step: 0.2, v: 3.6, u: 's' }
+    ],
+    stage: '<div class="rv-stage"><span class="rv-m"><b class="rv-ch" style="--i:0">动</b></span><span class="rv-m"><b class="rv-ch" style="--i:1">效</b></span><span class="rv-m"><b class="rv-ch" style="--i:2">是</b></span><span class="rv-m"><b class="rv-ch" style="--i:3">一</b></span><span class="rv-m"><b class="rv-ch" style="--i:4">种</b></span><span class="rv-m"><b class="rv-ch" style="--i:5">语</b></span><span class="rv-m"><b class="rv-ch" style="--i:6">言</b></span></div>',
+    css: `
+.rv-stage{display:flex;align-items:center;overflow:hidden;padding:10px 0}
+.rv-m{display:inline-block;overflow:hidden;padding:2px 0}
+.rv-ch{display:inline-block;font:600 24px/1.25 -apple-system,"PingFang SC",sans-serif;color:#e9ecf3;
+  transform:translateY(115%);opacity:0;
+  animation:rv-in var(--rv-dur,3.6s) cubic-bezier(.2,.85,.2,1) infinite;
+  animation-delay:calc(calc(var(--i) * -1) * var(--rv-gap,70ms))}
+@keyframes rv-in{
+  0%{transform:translateY(115%);opacity:0;filter:blur(6px)}
+  13%{transform:none;opacity:1;filter:none}
+  80%{transform:none;opacity:1}
+  92%,100%{transform:translateY(-115%);opacity:0;filter:blur(4px)}}`,
+    code: `<!-- 每个字一个遮罩 + 一个内层 -->
+<span class="m"><b style="--i:0">动</b></span>
+<span class="m"><b style="--i:1">效</b></span>
+
+<style>
+.m{ display:inline-block; overflow:hidden; padding:2px 0 }
+.m b{
+  display:inline-block;
+  transform:translateY(115%);
+  animation:rise .7s cubic-bezier(.2,.85,.2,1) forwards;
+  animation-delay:calc(var(--i) * 70ms);
+}
+@keyframes rise{
+  from{ transform:translateY(115%); opacity:0; filter:blur(6px) }
+  to  { transform:none;             opacity:1; filter:none }
+}
+</style>`,
+    usage: '大标题进场、品牌 slogan、章节页。',
+    note: '遮罩容器必须有 overflow:hidden 且给上下 padding，否则中文的撇捺会被切掉。逐字动画务必用负延迟做循环，正延迟只在第一轮生效。',
+    variants: ['逐词浮现（按词而非字）', '遮罩 + 3D 翻转']
+  },
+
+  /* ---------------- 11. 转场 ---------------- */
+  {
+    id: 'mask-wipe',
+    name: '遮罩擦除',
+    en: 'Mask Wipe',
+    cat: 'transition',
+    def: '新画面以矩形（或斜切）遮罩从一侧推开旧画面，是最通用、最不会出错的内容切换方式。',
+    keywords: ['遮罩擦除', '擦除转场', '推屏', '扫屏', 'mask wipe', 'clip-path transition', 'reveal wipe', 'inset transition'],
+    params: [
+      { k: '--wp-dur', l: '单次周期', min: 2, max: 8, step: 0.2, v: 4, u: 's' }
+    ],
+    stage: '<div class="wp-stage"><div class="wp-a">PAGE 01</div><div class="wp-b">PAGE 02</div></div>',
+    css: `
+.wp-stage{position:relative;width:210px;height:122px;border-radius:14px;overflow:hidden;background:#0d1016;border:1px solid rgba(255,255,255,.07)}
+.wp-a,.wp-b{position:absolute;inset:0;display:grid;place-items:center;font:600 10px/1 ui-monospace,monospace;letter-spacing:.24em}
+.wp-a{color:#525a70}
+.wp-b{color:#eef3ff;background:linear-gradient(135deg,#2b3bff,#8b2bff 55%,#ff2b7a);
+  clip-path:inset(0 100% 0 0);animation:wp-wipe var(--wp-dur,4s) cubic-bezier(.76,0,.24,1) infinite}
+@keyframes wp-wipe{
+  0%,8%{clip-path:inset(0 100% 0 0)}
+  46%,58%{clip-path:inset(0 0 0 0)}
+  96%,100%{clip-path:inset(0 0 0 100%)}}`,
+    code: `<!-- 上层 = 新页面，用 clip-path 擦入 -->
+<div class="wipe">
+  <div class="old">PAGE 01</div>
+  <div class="new">PAGE 02</div>
+</div>
+
+<style>
+.wipe{ position:relative; overflow:hidden }
+.new{
+  position:absolute; inset:0;
+  clip-path:inset(0 100% 0 0);          /* 从右往左擦入 */
+  animation:wipe-in .8s cubic-bezier(.76,0,.24,1) forwards;
+}
+@keyframes wipe-in{
+  from{ clip-path:inset(0 100% 0 0) }
+  to  { clip-path:inset(0 0 0 0) }
+}
+</style>`,
+    usage: '页面切换、Tab 内容替换、图片轮播、章节过场。',
+    note: 'clip-path 的四个值顺序是 上 右 下 左，写错方向就会看到"从中间裂开"。斜切版本用 polygon + skew 组合，插值会不连续，建议改用 transform 包一层。',
+    variants: ['斜切擦除（polygon）', '圆形扩散（circle at）']
+  },
+
+  /* ---------------- 12. 交互反馈 ---------------- */
+  {
+    id: 'ripple',
+    name: '涟漪',
+    en: 'Ripple',
+    cat: 'interaction',
+    def: '点击位置扩散一圈渐隐圆环，把"我点到了"这个事实可视化，是 Material 体系最基础的触觉替代。',
+    keywords: ['涟漪', '水波纹', '点击扩散', '波纹反馈', 'ripple', 'ripple effect', 'click wave', 'touch feedback'],
+    params: [
+      { k: '--rp-size', l: '波纹尺寸', min: 40, max: 160, step: 10, v: 90, u: 'px' },
+      { k: '--rp-dur', l: '扩散时长', min: 0.4, max: 1.5, step: 0.1, v: 0.8, u: 's' }
+    ],
+    stage: '<div class="rp-stage"><b>CLICK ME</b></div>',
+    css: `
+.rp-stage{position:relative;width:210px;height:122px;border-radius:14px;overflow:hidden;background:#0b0d12;
+  border:1px solid rgba(255,255,255,.07);display:grid;place-items:center;cursor:pointer}
+.rp-stage b{font:600 10px/1 ui-monospace,monospace;color:#6f7a94;letter-spacing:.24em}
+.rp-wave{position:absolute;width:var(--rp-size,90px);height:var(--rp-size,90px);
+  margin-top:calc(var(--rp-size,90px) / -2);margin-left:calc(var(--rp-size,90px) / -2);
+  border-radius:50%;pointer-events:none;transform:scale(.25);opacity:.9;
+  background:radial-gradient(circle,rgba(120,170,255,.55),rgba(120,170,255,0) 70%);
+  animation:rp-out var(--rp-dur,.8s) cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rp-out{to{transform:scale(2.2);opacity:0}}`,
+    mount: function (el) {
+      var box = el.querySelector('.rp-stage');
+      if (!box) return;
+      var spawn = function (cx, cy) {
+        var r = box.getBoundingClientRect();
+        var s = document.createElement('span');
+        s.className = 'rp-wave';
+        s.style.left = (cx - r.left) + 'px';
+        s.style.top = (cy - r.top) + 'px';
+        box.appendChild(s);
+        setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 1600);
+      };
+      var down = function (e) { spawn(e.clientX, e.clientY); };
+      var click = function (e) { e.stopPropagation(); };
+      var auto = setInterval(function () {
+        if (document.documentElement.dataset.paused === '1') return;
+        var r = box.getBoundingClientRect();
+        if (!r.width) return;
+        spawn(r.left + r.width * (0.25 + Math.random() * 0.5), r.top + r.height * (0.3 + Math.random() * 0.4));
+      }, 2200);
+      box.addEventListener('pointerdown', down);
+      box.addEventListener('click', click);
+      return function () {
+        clearInterval(auto);
+        box.removeEventListener('pointerdown', down);
+        box.removeEventListener('click', click);
+      };
+    },
+    code: `<!-- HTML -->
+<button class="ripple-btn">CLICK ME</button>
+
+<style>
+.ripple-btn{ position:relative; overflow:hidden }
+.ripple{
+  position:absolute; width:90px; height:90px;
+  margin:-45px 0 0 -45px; border-radius:50%;
+  background:radial-gradient(circle,
+    rgba(120,170,255,.55), rgba(120,170,255,0) 70%);
+  transform:scale(.25);
+  animation:ripple-out .8s cubic-bezier(.2,.7,.2,1) forwards;
+  pointer-events:none;
+}
+@keyframes ripple-out{ to{ transform:scale(2.2); opacity:0 } }
+</style>
+
+<script>
+btn.addEventListener('pointerdown', function (e) {
+  var r = btn.getBoundingClientRect();
+  var s = document.createElement('span');
+  s.className = 'ripple';
+  s.style.left = (e.clientX - r.left) + 'px';
+  s.style.top  = (e.clientY - r.top)  + 'px';
+  btn.appendChild(s);
+  setTimeout(function () { s.remove() }, 800);
+});
+<\/script>`,
+    usage: '按钮点击、列表项选中、画布工具、移动端任何可点区域。',
+    note: '波纹层必须 pointer-events:none，否则第二次点击会打在波纹上。强制给父级 overflow:hidden，超出容器的部分要裁掉。',
+    variants: ['从中心固定扩散', '涟漪 + 轻微缩放反馈']
+  },
+
+  /* ---------------- 13. 光效 ---------------- */
+  {
+    id: 'shine-sweep',
+    name: '扫光',
+    en: 'Shine Sweep',
+    cat: 'light',
+    def: '一条斜向高光带周期性掠过表面，模拟玻璃或金属的反光，是最轻量的"质感升级"。',
+    keywords: ['扫光', '高光扫过', '反光', '光泽', 'shine sweep', 'glare', 'light sweep', 'glossy'],
+    params: [
+      { k: '--sh-dur', l: '扫光周期', min: 1.5, max: 6, step: 0.1, v: 3, u: 's' },
+      { k: '--sh-a', l: '高光强度', min: 0.1, max: 1, step: 0.05, v: 0.5, u: '' }
+    ],
+    stage: '<div class="sh-card"><span>SHINE SWEEP</span></div>',
+    css: `
+.sh-card{position:relative;width:190px;height:104px;border-radius:14px;overflow:hidden;display:grid;place-items:center;
+  background:linear-gradient(160deg,#151b27,#0b0e14);border:1px solid rgba(255,255,255,.08)}
+.sh-card::before{content:"";position:absolute;top:-60%;left:-40%;width:52%;height:220%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  filter:blur(6px);opacity:var(--sh-a,.5);
+  transform:rotate(18deg) translateX(-120%);
+  animation:sh-sweep var(--sh-dur,3s) cubic-bezier(.5,0,.5,1) infinite}
+.sh-card span{position:relative;font:600 10px/1 ui-monospace,monospace;letter-spacing:.22em;color:#c9d3e8}
+@keyframes sh-sweep{0%{transform:rotate(18deg) translateX(-120%)}55%,100%{transform:rotate(18deg) translateX(340%)}}`,
+    code: `<!-- HTML -->
+<div class="shine">SHINE</div>
+
+<style>
+.shine{ position:relative; overflow:hidden }
+.shine::before{
+  content:""; position:absolute; top:-60%; left:-40%;
+  width:52%; height:220%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  filter:blur(6px); opacity:.5;
+  transform:rotate(18deg) translateX(-120%);
+  animation:sweep 3s cubic-bezier(.5,0,.5,1) infinite;
+}
+@keyframes sweep{
+  0%       { transform:rotate(18deg) translateX(-120%) }
+  55%,100% { transform:rotate(18deg) translateX(340%) }
+}
+</style>`,
+    usage: '会员卡、价格卡、下载按钮、任何需要"贵一点"的表面。',
+    note: '光带要做窄（宽度 50% 左右）+ 斜 15~20 度，才像反光而不是白条。周期留 30% 空白，不要一直扫。',
+    variants: ['悬停才扫（hover 触发）', '扫光 + 边缘流光']
+  },
+
+  /* ---------------- 14. 光效 ---------------- */
+  {
+    id: 'breathing-glow',
+    name: '呼吸光',
+    en: 'Breathing Glow',
+    cat: 'light',
+    def: '光晕随时间缓慢增强、减弱，像呼吸一样有节奏，用来表达"一直活着、正在运行"的持续状态。',
+    keywords: ['呼吸光', '呼吸', '光晕呼吸', '脉冲光', 'breathing glow', 'pulse glow', 'glow pulse'],
+    params: [
+      { k: '--br-dur', l: '呼吸周期', min: 1.5, max: 6, step: 0.1, v: 3.2, u: 's' },
+      { k: '--br-glow', l: '光晕范围', min: 0, max: 60, step: 2, v: 34, u: 'px' }
+    ],
+    stage: '<div class="br-wrap"><div class="br-orb"></div></div>',
+    css: `
+.br-wrap{width:190px;height:120px;display:grid;place-items:center}
+.br-orb{width:74px;height:74px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#d3e7ff,#5b8cff 56%,#1b2a6b);
+  box-shadow:0 0 var(--br-glow,34px) rgba(88,150,255,.85);
+  animation:br-breathe var(--br-dur,3.2s) ease-in-out infinite}
+@keyframes br-breathe{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.07);opacity:1}}`,
+    code: `/* 缩放 + 透明度同步呼吸，比单纯改 box-shadow 更省 GPU */
+.orb{
+  box-shadow:0 0 34px rgba(88,150,255,.85);
+  animation:breathe 3.2s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{ transform:scale(.9);  opacity:.7 }
+  50%    { transform:scale(1.07); opacity:1  }
+}`,
+    usage: 'AI 待命态、在线状态指示、录音中、服务器健康度。',
+    note: '不要用 box-shadow 做大范围动画，会每帧重绘；改 transform + opacity 才是合成层动画。周期低于 1.5s 会变成闪烁，显得焦虑。',
+    variants: ['呼吸 + 外圈扩散环', '呼吸光 + 极光流体']
+  },
+
+  /* ---------------- 15. 材质 ---------------- */
+  {
+    id: 'film-grain',
+    name: '噪点颗粒',
+    en: 'Film Grain',
+    cat: 'material',
+    def: '在平滑渐变上叠一层高频噪点，消除色带（banding）并带来胶片质感，是"高级感"最便宜的来源。',
+    keywords: ['噪点', '颗粒', '胶片颗粒', '噪点纹理', 'grain', 'film grain', 'noise texture', 'dither'],
+    params: [
+      { k: '--gr-op', l: '颗粒强度', min: 0.05, max: 0.6, step: 0.01, v: 0.28, u: '' },
+      { k: '--gr-scale', l: '颗粒粗细', min: 60, max: 240, step: 10, v: 120, u: 'px' }
+    ],
+    stage: '<div class="gr-stage"></div>',
+    css: `
+.gr-stage{position:relative;width:200px;height:120px;border-radius:14px;overflow:hidden;
+  background:linear-gradient(135deg,#2a3cff,#8b2bff 50%,#ff2b7a)}
+.gr-stage::after{content:"";position:absolute;inset:-40%;mix-blend-mode:overlay;opacity:var(--gr-op,.28);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  background-size:var(--gr-scale,120px) var(--gr-scale,120px);
+  animation:gr-move 1.1s steps(5) infinite}
+@keyframes gr-move{
+  0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-4%)}
+  60%{transform:translate(-3%,-2%)}80%{transform:translate(4%,3%)}100%{transform:translate(0,0)}}`,
+    code: `<div class="grain"></div>
+
+<style>
+.grain{ position:relative; overflow:hidden }
+.grain::after{
+  content:""; position:absolute; inset:-40%;
+  /* feTurbulence 生成噪点，无需图片 */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  background-size:120px 120px;
+  mix-blend-mode:overlay;
+  opacity:.28;
+  animation:grain 1.1s steps(5) infinite;   /* steps 制造胶片抖动 */
+}
+@keyframes grain{
+  0%{transform:translate(0,0)}     20%{transform:translate(-4%,3%)}
+  40%{transform:translate(3%,-4%)} 60%{transform:translate(-3%,-2%)}
+  80%{transform:translate(4%,3%)}  100%{transform:translate(0,0)}
+}
+</style>`,
+    usage: '大色块渐变背景、暗色插画、视频封面、品牌视觉。',
+    note: '必须 inset:-40% 再位移，否则边缘会露出空边。mix-blend-mode 用 overlay；用 normal 会整体发灰。',
+    variants: ['静态颗粒（只求质感）', '颗粒 + 极光流体']
+  },
+
+  /* ---------------- 16. 材质 ---------------- */
+  {
+    id: 'liquid-metal',
+    name: '液态金属',
+    en: 'Liquid Metal',
+    cat: 'material',
+    def: '多段灰阶锥形渐变在球面上缓慢旋转，形成流动的金属高光，介于水银与抛光铬之间。',
+    keywords: ['液态金属', '水银', '金属光泽', '铬', 'liquid metal', 'mercury', 'chrome', 'metallic'],
+    params: [
+      { k: '--lm-dur', l: '旋转周期', min: 3, max: 20, step: 1, v: 9, u: 's' },
+      { k: '--lm-c', l: '金属对比', min: 0.8, max: 1.8, step: 0.05, v: 1.05, u: '' }
+    ],
+    stage: '<div class="lm-wrap"><div class="lm-orb"></div></div>',
+    css: `
+.lm-wrap{width:190px;height:120px;display:grid;place-items:center}
+.lm-orb{width:92px;height:92px;border-radius:50%;
+  background:conic-gradient(from 0deg,#eef3fb,#7f8a9d 18%,#f8fbff 34%,#4d5566 52%,#dfe7f3 68%,#6b7486 84%,#eef3fb);
+  filter:contrast(var(--lm-c,1.05)) saturate(.85);
+  box-shadow:inset 0 -10px 20px rgba(0,0,0,.5),inset 0 8px 14px rgba(255,255,255,.32),0 14px 30px rgba(0,0,0,.5);
+  animation:lm-spin var(--lm-dur,9s) linear infinite}
+@keyframes lm-spin{to{transform:rotate(1turn)}}`,
+    code: `.metal{
+  border-radius:50%;
+  background:conic-gradient(from 0deg,
+    #eef3fb, #7f8a9d 18%, #f8fbff 34%,
+    #4d5566 52%, #dfe7f3 68%, #6b7486 84%, #eef3fb);
+  filter:contrast(1.05) saturate(.85);
+  /* 内侧上下两道阴影 = 球体感 */
+  box-shadow:inset 0 -10px 20px rgba(0,0,0,.5),
+             inset 0 8px 14px rgba(255,255,255,.32),
+             0 14px 30px rgba(0,0,0,.5);
+  animation:spin 9s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(1turn) } }`,
+    usage: '品牌标识、订阅徽章、AI 头像、科技类按钮。',
+    note: '灰阶必须明暗交替且带一点蓝，纯黑白会变成"银盘子"；旋转周期低于 3s 就像加载动画。',
+    variants: ['液态金属文字（background-clip:text）', '液态金属 + 玻璃拟态']
+  },
+
+  /* ---------------- 17. 形变 ---------------- */
+  {
+    id: 'squash-stretch',
+    name: '挤压拉伸',
+    en: 'Squash & Stretch',
+    cat: 'transform',
+    def: '物体移动时沿运动方向拉长、撞击时垂直方向压扁，用形变伪造重量与速度，是动画十二法则里最实用的一条。',
+    keywords: ['挤压拉伸', '挤压', '拉伸', '形变', 'squash', 'stretch', 'squash and stretch'],
+    params: [
+      { k: '--sq-dur', l: '往返周期', min: 1.4, max: 5, step: 0.1, v: 2.6, u: 's' },
+      { k: '--sq-dist', l: '移动距离', min: 20, max: 70, step: 2, v: 46, u: 'px' }
+    ],
+    stage: '<div class="sq-stage"><div class="sq-box"></div></div>',
+    css: `
+.sq-stage{width:200px;height:120px;display:grid;place-items:center}
+.sq-box{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#ffd166,#ff7a3d);
+  box-shadow:0 10px 24px rgba(255,140,60,.28);
+  animation:sq-move var(--sq-dur,2.6s) cubic-bezier(.45,0,.55,1) infinite}
+@keyframes sq-move{
+  0%,4%{transform:translateX(calc(var(--sq-dist,46px) * -1)) scale(1.25,.78)}
+  10%{transform:translateX(calc(var(--sq-dist,46px) * -1)) scale(1,1)}
+  46%{transform:translateX(calc(var(--sq-dist,46px) * .6)) scale(.82,1.18)}
+  50%,54%{transform:translateX(var(--sq-dist,46px)) scale(1.25,.78)}
+  60%{transform:translateX(var(--sq-dist,46px)) scale(1,1)}
+  96%{transform:translateX(calc(var(--sq-dist,46px) * -.6)) scale(.82,1.18)}
+  100%{transform:translateX(calc(var(--sq-dist,46px) * -1)) scale(1.25,.78)}}`,
+    code: `/* 法则：体积守恒 —— 拉长就变细，压扁就变宽 */
+.box{
+  animation:hop 2.6s cubic-bezier(.45,0,.55,1) infinite;
+}
+@keyframes hop{
+  0%,4%  { transform:translateX(-46px) scale(1.25,.78) }  /* 左侧撞击：压扁 */
+  10%    { transform:translateX(-46px) scale(1,1) }
+  46%    { transform:translateX(28px)  scale(.82,1.18) }  /* 运动中：拉长 */
+  50%,54%{ transform:translateX(46px)  scale(1.25,.78) }  /* 右侧撞击：压扁 */
+  60%    { transform:translateX(46px)  scale(1,1) }
+  96%    { transform:translateX(-28px) scale(.82,1.18) }
+  100%   { transform:translateX(-46px) scale(1.25,.78) }
+}`,
+    usage: '空状态插画、加载角色、拖拽物品、游戏化反馈。',
+    note: 'scaleX 和 scaleY 必须反向补偿（1.25 ↔ .78），否则看起来只是变形而不是有重量。撞击瞬间停留 4%~6% 的时长，才有"顿"感。',
+    variants: ['落地压扁（单次触发）', '挤压 + 弹簧回弹']
+  },
+
+  /* ---------------- 18. 运动 ---------------- */
+  {
+    id: 'parallax',
+    name: '视差滚动',
+    en: 'Parallax Scroll',
+    cat: 'motion',
+    def: '前后景按不同速率随滚动位移，制造纵深。前景快、远景慢，是"平面做出空间"的主要手段。',
+    keywords: ['视差', '视差滚动', '层移', '滚动视差', 'parallax', 'parallax scroll', 'depth scroll'],
+    params: [
+      { k: '--px-k', l: '视差强度', min: 0.15, max: 1, step: 0.05, v: 0.45, u: '' }
+    ],
+    stage: '<div class="px-box"><div class="px-scene"><div class="px-l px-l3"></div><div class="px-l px-l2">PARALLAX</div><div class="px-l px-l1"></div></div></div>',
+    css: `
+.px-box{position:relative;width:210px;height:132px;border-radius:14px;overflow-y:auto;overflow-x:hidden;
+  background:#06080f;border:1px solid rgba(255,255,255,.07);scrollbar-width:none}
+.px-box::-webkit-scrollbar{width:0;height:0}
+.px-scene{position:relative;height:340px}
+.px-l{position:absolute;left:0;right:0;top:0;height:560px;pointer-events:none}
+.px-l1{background-image:radial-gradient(rgba(150,185,255,.5) 1px,transparent 1px);background-size:22px 22px;
+  transform:translateY(calc(calc(calc(var(--sy,0px) * -1) * var(--px-k,.45)) * .3))}
+.px-l2{display:flex;align-items:flex-start;justify-content:center;padding-top:64px;
+  font:700 19px/1 ui-monospace,monospace;letter-spacing:.14em;color:#dfe8ff;
+  text-shadow:0 2px 18px rgba(90,140,255,.5);
+  transform:translateY(calc(calc(calc(var(--sy,0px) * -1) * var(--px-k,.45)) * .62))}
+.px-l3{background:repeating-linear-gradient(180deg,rgba(120,170,255,.14) 0 1px,transparent 1px 30px);
+  transform:translateY(calc(calc(calc(var(--sy,0px) * -1) * var(--px-k,.45)) * 1))}`,
+    mount: function (el) {
+      var box = el.querySelector('.px-box');
+      if (!box) return;
+      var onScroll = function () { el.style.setProperty('--sy', box.scrollTop + 'px'); };
+      box.addEventListener('scroll', onScroll);
+      var dir = 1;
+      var auto = setInterval(function () {
+        if (document.documentElement.dataset.paused === '1') return;
+        var max = box.scrollHeight - box.clientHeight;
+        if (max <= 0) return;
+        box.scrollTop += 0.9 * dir;
+        if (box.scrollTop >= max - 1) dir = -1;
+        if (box.scrollTop <= 0) dir = 1;
+      }, 24);
+      return function () { clearInterval(auto); box.removeEventListener('scroll', onScroll); };
+    },
+    code: `<!-- 三层：背景点阵 / 中景文字 / 前景遮罩 -->
+<div class="scene" onscroll="this.style.setProperty('--sy', this.scrollTop + 'px')">
+  <div class="layer far"></div>
+  <div class="layer mid">PARALLAX</div>
+  <div class="layer near"></div>
+</div>
+
+<style>
+.scene{ overflow-y:auto; height:320px }
+.layer{ position:absolute; inset:0 }
+/* 倍率越小 = 越远 = 动得越慢 */
+.far { transform:translateY(calc(var(--sy,0px) * -0.14)) }
+.mid { transform:translateY(calc(var(--sy,0px) * -0.28)) }
+.near{ transform:translateY(calc(var(--sy,0px) * -0.45)) }
+</style>`,
+    usage: '落地页首屏、故事型长页、产品剖面图、地图层级。',
+    note: '必须监听滚动写入 CSS 变量，不要在 scroll 里直接改 style.transform（会掉帧）。倍率控制在 0.1~0.5，超过 0.6 会晕。',
+    variants: ['视差 + 缩放（镜头推进）', '鼠标视差（无滚动）']
+  },
+
+  /* ---------------- 19. 文字 ---------------- */
+  {
+    id: 'count-up',
+    name: '数字滚动',
+    en: 'Count Up',
+    cat: 'text',
+    def: '数值从 0 递增到目标值，末段减速停住，让"数据"本身成为动效主角。',
+    keywords: ['数字滚动', '数字跳动', '计数动画', '数字递增', 'count up', 'number roll', 'odometer'],
+    params: [
+      { k: '--cu-dur', l: '递增时长', min: 1, max: 4, step: 0.1, v: 1.8, u: 's' }
+    ],
+    stage: '<div class="cu-stage"><div class="cu-num">0</div><div class="cu-label">TOTAL VIEWS</div></div>',
+    css: `
+.cu-stage{width:200px;height:120px;display:grid;align-content:center;justify-items:center;gap:8px}
+.cu-num{font:700 30px/1 ui-monospace,monospace;color:#eef3ff;letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;text-shadow:0 4px 22px rgba(90,140,255,.45)}
+.cu-label{font:400 9px/1 ui-monospace,monospace;color:#5f6b85;letter-spacing:.24em}`,
+    mount: function (el) {
+      var num = el.querySelector('.cu-num');
+      if (!num) return;
+      var target = 12840, raf = 0, timer = 0, start = 0, running = true;
+      var fmt = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+      var step = function (t) {
+        if (!running) return;
+        if (document.documentElement.dataset.paused === '1') {
+          start += 16.7;
+          raf = requestAnimationFrame(step);
+          return;
+        }
+        if (!start) start = t;
+        var dur = (parseFloat(getComputedStyle(el).getPropertyValue('--cu-dur')) || 1.8) * 1000;
+        var p = Math.min((t - start) / dur, 1);
+        var e = 1 - Math.pow(1 - p, 4);
+        num.textContent = fmt(Math.round(target * e));
+        if (p < 1) {
+          raf = requestAnimationFrame(step);
+        } else {
+          timer = setTimeout(function () {
+            start = 0;
+            num.textContent = '0';
+            raf = requestAnimationFrame(step);
+          }, 1400);
+        }
+      };
+      raf = requestAnimationFrame(step);
+      return function () { running = false; cancelAnimationFrame(raf); clearTimeout(timer); };
+    },
+    code: `/* 缓动取 easeOutQuart，末段慢下来才有"数到"的感觉 */
+var target = 12840, dur = 1800, start = 0;
+
+function tick(t){
+  if (!start) start = t;
+  var p = Math.min((t - start) / dur, 1);
+  var e = 1 - Math.pow(1 - p, 4);          // easeOutQuart
+  el.textContent = Math.round(target * e)
+    .toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+  if (p < 1) requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);`,
+    usage: '数据看板、年度报告、成绩单、融资额、粉丝数。',
+    note: '必须用 tabular-nums，否则数字宽度变化会让整块文字左右抖。缓动不要用线性，末段减速才是"停稳"而不是"急刹"。',
+    variants: ['数字滚动 + 逐位翻转（odometer）', '滚动进入视口才触发']
+  },
+
+  /* ---------------- 20. 转场 ---------------- */
+  {
+    id: 'zoom-push',
+    name: '缩放推进',
+    en: 'Zoom Push',
+    cat: 'transition',
+    def: '旧画面放大淡出、新画面从更近处缩小落位，模拟镜头向前推进后重新对焦，比淡入淡出更有"进入"的方向感。',
+    keywords: ['缩放转场', '推进', '推近', '镜头推进', 'zoom transition', 'zoom push', 'scale transition'],
+    params: [
+      { k: '--zp-dur', l: '单次周期', min: 2, max: 8, step: 0.2, v: 4, u: 's' }
+    ],
+    stage: '<div class="zp-stage"><div class="zp-a">PAGE 01</div><div class="zp-b">PAGE 02</div></div>',
+    css: `
+.zp-stage{position:relative;width:210px;height:122px;border-radius:14px;overflow:hidden;background:#0b0d14}
+.zp-a,.zp-b{position:absolute;inset:0;display:grid;place-items:center;font:600 10px/1 ui-monospace,monospace;letter-spacing:.24em}
+.zp-a{background:linear-gradient(135deg,#121a29,#0a0d14);color:#55617a;animation:zp-out var(--zp-dur,4s) cubic-bezier(.4,0,.2,1) infinite}
+.zp-b{background:linear-gradient(135deg,#17d6a8,#1f6bff);color:#04121b;animation:zp-in var(--zp-dur,4s) cubic-bezier(.2,.9,.2,1) infinite}
+@keyframes zp-out{0%,18%{transform:scale(1);opacity:1}52%,100%{transform:scale(1.6);opacity:0}}
+@keyframes zp-in{0%,34%{transform:scale(1.42);opacity:0}62%,88%{transform:scale(1);opacity:1}100%{transform:scale(1.42);opacity:0}}`,
+    code: `/* 旧页放大 + 淡出，新页从 1.4 缩回 1 */
+.old{ animation:zoom-out .8s cubic-bezier(.4,0,.2,1) forwards }
+.new{ animation:zoom-in  .8s cubic-bezier(.2,.9,.2,1) .2s forwards }
+
+@keyframes zoom-out{
+  from{ transform:scale(1);   opacity:1 }
+  to  { transform:scale(1.6); opacity:0 }
+}
+@keyframes zoom-in{
+  from{ transform:scale(1.42); opacity:0 }
+  to  { transform:scale(1);    opacity:1 }
+}`,
+    usage: '图片详情、卡片进详情页、章节页、开场动画。',
+    note: '两个动画必须重叠 20%~30% 的时长，否则会看到"黑一下"。放大倍率 1.4~1.6 足够，超过 2 会糊。',
+    variants: ['缩放 + 模糊（景深推进）', '缩放 + 圆形扩散']
+  },
+
+  /* ---------------- 21. 转场 ---------------- */
+  {
+    id: 'circle-reveal',
+    name: '圆形扩散',
+    en: 'Circle Reveal',
+    cat: 'transition',
+    def: '圆形遮罩从点击点向外扩张铺满屏幕，视觉上"从一个点长出一个页面"，适合有明确触发位置的切换。',
+    keywords: ['圆形扩散', '圆形揭示', '圆形转场', 'circle reveal', 'circular reveal', 'radial reveal'],
+    params: [
+      { k: '--cr-dur', l: '单次周期', min: 2, max: 8, step: 0.2, v: 4, u: 's' }
+    ],
+    stage: '<div class="cr-stage"><div class="cr-a">PAGE 01</div><div class="cr-b">PAGE 02</div></div>',
+    css: `
+.cr-stage{position:relative;width:210px;height:122px;border-radius:14px;overflow:hidden;background:#0b0d14}
+.cr-a,.cr-b{position:absolute;inset:0;display:grid;place-items:center;font:600 10px/1 ui-monospace,monospace;letter-spacing:.24em}
+.cr-a{color:#525a70;background:linear-gradient(135deg,#101827,#0a0d14)}
+.cr-b{color:#04121b;background:linear-gradient(135deg,#ffd166,#ff7a3d);
+  clip-path:circle(0% at 50% 50%);animation:cr-in var(--cr-dur,4s) cubic-bezier(.4,0,.2,1) infinite}
+@keyframes cr-in{
+  0%,8%{clip-path:circle(0% at 50% 50%)}
+  50%,60%{clip-path:circle(85% at 50% 50%)}
+  96%,100%{clip-path:circle(0% at 50% 50%)}}`,
+    code: `<div class="page-b"></div>
+
+<style>
+.page-b{
+  clip-path:circle(0% at 50% 50%);
+  animation:circle-reveal .7s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes circle-reveal{
+  from{ clip-path:circle(0%  at var(--cx,50%) var(--cy,50%)) }
+  to  { clip-path:circle(75% at var(--cx,50%) var(--cy,50%)) }
+}
+</style>
+
+<script>
+/* 从点击点长出来 */
+btn.addEventListener('click', function (e) {
+  var r = target.getBoundingClientRect();
+  target.style.setProperty('--cx', (e.clientX - r.left) + 'px');
+  target.style.setProperty('--cy', (e.clientY - r.top)  + 'px');
+});
+<\/script>`,
+    usage: '手势切换主题、点击卡片进详情、开关类切换、暗色模式切换。',
+    note: '半径要算到能覆盖对角（约 75%），小了会露出旧页面边缘。clip-path 动画无法走合成层，短距离小元素更稳。',
+    variants: ['圆形扩散 + 缩放内容', '多点同时扩散']
+  },
+
+  /* ---------------- 22. 交互反馈 ---------------- */
+  {
+    id: 'press-down',
+    name: '按压下沉',
+    en: 'Press Down',
+    cat: 'interaction',
+    def: '按钮被按下时整体下移、阴影收紧，模拟真实按键行程，是最容易被忽略却最影响"手感"的反馈。',
+    keywords: ['按压', '下沉', '按钮反馈', '按下', 'press down', 'button press', 'tactile'],
+    params: [
+      { k: '--pd-y', l: '下沉距离', min: 2, max: 10, step: 1, v: 5, u: 'px' },
+      { k: '--pd-dur', l: '按压周期', min: 1.5, max: 5, step: 0.1, v: 2.8, u: 's' }
+    ],
+    stage: '<div class="pd-stage"><button class="pd-btn" type="button"><span>PRESS ME</span></button></div>',
+    css: `
+.pd-stage{width:210px;height:122px;display:grid;place-items:center}
+.pd-btn{padding:14px 30px;border:0;border-radius:12px;cursor:pointer;
+  background:linear-gradient(180deg,#f6f9ff,#ccd7ea);color:#0b0f18;
+  font:600 10px/1 ui-monospace,monospace;letter-spacing:.2em;
+  animation:pd-press var(--pd-dur,2.8s) cubic-bezier(.3,.9,.3,1) infinite}
+@keyframes pd-press{
+  0%,42%{transform:translateY(0);box-shadow:0 calc(var(--pd-y,5px) + 1px) 0 #6d7a93,0 12px 22px rgba(0,0,0,.45)}
+  52%,66%{transform:translateY(var(--pd-y,5px));box-shadow:0 1px 0 #6d7a93,0 4px 9px rgba(0,0,0,.4)}
+  78%,100%{transform:translateY(0);box-shadow:0 calc(var(--pd-y,5px) + 1px) 0 #6d7a93,0 12px 22px rgba(0,0,0,.45)}}`,
+    code: `.btn{
+  /* 硬阴影 = 按键的"厚度" */
+  box-shadow:0 6px 0 #6d7a93, 0 12px 22px rgba(0,0,0,.45);
+  transition:transform .09s ease, box-shadow .09s ease;
+}
+.btn:active{
+  transform:translateY(5px);
+  box-shadow:0 1px 0 #6d7a93, 0 4px 9px rgba(0,0,0,.4);
+}`,
+    usage: '所有可点按钮、键盘、开关、游戏化控件。',
+    note: '下沉距离要和硬阴影厚度一致（阴影 6px → 下沉 5px），否则会"飘"。过渡时长压到 90ms 以内，手感才跟手。',
+    variants: ['按压 + 涟漪', '按压 + 轻微缩放（0.97）']
+  },
+
+  /* ---------------- 23. 交互反馈 ---------------- */
+  {
+    id: 'shimmer',
+    name: '骨架屏微光',
+    en: 'Shimmer',
+    cat: 'interaction',
+    def: '占位灰块上有一道高光从左往右匀速掠过，告诉用户"内容正在路上"，同时避免空白带来的焦虑。',
+    keywords: ['骨架屏', '微光', '加载占位', '流光占位', 'shimmer', 'skeleton', 'loading placeholder'],
+    params: [
+      { k: '--sk-dur', l: '掠过周期', min: 0.6, max: 3, step: 0.1, v: 1.6, u: 's' },
+      { k: '--sk-a', l: '高光亮度', min: 0.04, max: 0.4, step: 0.01, v: 0.14, u: '' }
+    ],
+    stage: '<div class="sk-card"><div class="sk-row" style="width:62%"></div><div class="sk-row" style="width:100%"></div><div class="sk-row" style="width:86%"></div><div class="sk-row short" style="width:44%"></div></div>',
+    css: `
+.sk-card{width:190px;padding:16px;border-radius:12px;background:#0b0e14;border:1px solid rgba(255,255,255,.06);
+  display:flex;flex-direction:column;gap:9px}
+.sk-row{height:11px;border-radius:5px;background-color:#141a24;
+  background-image:linear-gradient(90deg,transparent 20%,rgba(255,255,255,var(--sk-a,.14)) 40%,transparent 60%);
+  background-size:300% 100%;background-repeat:no-repeat;
+  animation:sk-shine var(--sk-dur,1.6s) linear infinite}
+.sk-row.short{height:9px;margin-top:4px}
+@keyframes sk-shine{0%{background-position:180% 0}100%{background-position:-80% 0}}`,
+    code: `<div class="sk-line"></div>
+
+<style>
+.sk-line{
+  height:11px; border-radius:5px; background-color:#141a24;
+  /* 高光靠 background-position 位移，不用改元素 */
+  background-image:linear-gradient(90deg,
+    transparent 20%, rgba(255,255,255,.14) 40%, transparent 60%);
+  background-size:300% 100%;
+  background-repeat:no-repeat;
+  animation:shimmer 1.6s linear infinite;
+}
+@keyframes shimmer{
+  0%  { background-position:180% 0 }
+  100%{ background-position:-80% 0 }
+}
+</style>`,
+    usage: '列表首屏、卡片加载、表格占位、AI 生成等待。',
+    note: '高光要有 20% 的软过渡，硬边会变成"扫描线"。骨架尺寸必须贴近真实内容，否则加载完会有跳动（CLS）。',
+    variants: ['骨架 + 逐项延迟（更自然）', '骨架 + 数字滚动占位']
+  },
+
+  /* ---------------- 24. 环境 ---------------- */
+  {
+    id: 'particle-field',
+    name: '粒子场',
+    en: 'Particle Field',
+    cat: 'ambient',
+    def: '大量微光点在暗场中缓慢上浮、明灭，营造"空间里有东西在动"的氛围，比纯色背景多一层深度。',
+    keywords: ['粒子', '星尘', '漂浮光点', '粒子背景', 'particles', 'particle field', 'star dust', 'floating dots'],
+    params: [
+      { k: '--pt-glow', l: '光点辉光', min: 0, max: 14, step: 1, v: 6, u: 'px' },
+      { k: '--pt-a', l: '整体亮度', min: 0.1, max: 1, step: 0.05, v: 0.85, u: '' }
+    ],
+    stage: '<div class="pt-stage">' + particleHTML(24) + '</div>',
+    css: `
+.pt-stage{position:relative;width:210px;height:130px;border-radius:14px;overflow:hidden;
+  background:radial-gradient(120% 100% at 50% 110%,#12203d,#05070d 68%)}
+.pt-stage i{position:absolute;border-radius:50%;background:#a8ccff;opacity:0;
+  box-shadow:0 0 var(--pt-glow,6px) rgba(150,195,255,.9);
+  animation:pt-rise var(--d,8s) linear infinite;animation-delay:var(--dl,0s)}
+@keyframes pt-rise{
+  0%{transform:translateY(16px) scale(.5);opacity:0}
+  18%{opacity:calc(var(--pt-a,.85) * .9)}
+  72%{opacity:calc(var(--pt-a,.85) * .75)}
+  100%{transform:translateY(-120px) scale(1);opacity:0}}`,
+    code: `<!-- 用 JS 生成 N 个点，随机位置/大小/时长 -->
+<div class="field">
+  <i style="left:12%;top:80%;width:2px;height:2px;--d:8s;--dl:-2s"></i>
+  <i style="left:46%;top:64%;width:3px;height:3px;--d:11s;--dl:-5s"></i>
+</div>
+
+<style>
+.field{ position:relative; overflow:hidden;
+  background:radial-gradient(120% 100% at 50% 110%,#12203d,#05070d 68%) }
+.field i{
+  position:absolute; border-radius:50%; background:#a8ccff;
+  box-shadow:0 0 6px rgba(150,195,255,.9);
+  animation:rise var(--d,8s) linear infinite;
+  animation-delay:var(--dl,0s);        /* 负延迟 → 一开始就在不同相位 */
+}
+@keyframes rise{
+  0%  { transform:translateY(16px)  scale(.5); opacity:0 }
+  18% { opacity:.8 }
+  100%{ transform:translateY(-120px) scale(1); opacity:0 }
+}
+</style>`,
+    usage: '科技类首屏、AI 等待态、音乐播放器、深色登录页。',
+    note: '点数控制在 30 以内、统一用 transform 位移；直接用 canvas 反而更简单，但 DOM 方便逐点调参。负延迟是让粒子"已经在路上"的关键。',
+    variants: ['粒子 + 连线（星座）', '粒子跟随鼠标（排斥/吸引）']
+  }
+
+];
+
+if (typeof window !== 'undefined') {
+  window.CATEGORIES = CATEGORIES;
+  window.EFFECTS = EFFECTS;
+}
+
+</script>
+<script>
+(function () {
+  'use strict';
+
+  var grid = document.getElementById('grid');
+  var rail = document.getElementById('rail');
+  var empty = document.getElementById('empty');
+  var countEl = document.getElementById('count');
+  var modal = document.getElementById('modal');
+  var mStage = document.getElementById('m-stage');
+  var mParams = document.getElementById('m-params');
+  var mBody = document.getElementById('m-body');
+  var toast = document.getElementById('toast');
+
+  var state = { q: '', cat: 'all' };
+  var cardCleanups = [];
+  var modalCleanup = null;
+
+  /* ---------- helpers ---------- */
+  function catOf(id) {
+    for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i];
+    return { name: id, en: id };
+  }
+  function defaults(fx) {
+    var o = {};
+    fx.params.forEach(function (p) { o[p.k] = p.v; });
+    return o;
+  }
+  function applyParams(el, fx, vals) {
+    fx.params.forEach(function (p) {
+      var v = (vals && vals[p.k] != null) ? vals[p.k] : p.v;
+      el.style.setProperty(p.k, v + (p.u || ''));
+    });
+  }
+  function mountInto(el, fx, vals) {
+    el.innerHTML = fx.stage;
+    applyParams(el, fx, vals);
+    if (typeof fx.mount === 'function') {
+      var c = fx.mount(el);
+      return typeof c === 'function' ? c : null;
+    }
+    return null;
+  }
+  function clearCards() {
+    cardCleanups.forEach(function (f) { try { f(); } catch (e) {} });
+    cardCleanups = [];
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function matches(fx, q) {
+    if (!q) return true;
+    var hay = [fx.name, fx.en, fx.def, fx.id, catOf(fx.cat).name]
+      .concat(fx.keywords || []).concat(fx.variants || []).join(' ').toLowerCase();
+    return q.toLowerCase().split(/\s+/).every(function (t) { return hay.indexOf(t) > -1; });
+  }
+
+  /* ---------- 注入所有效果的 CSS（只做一次） ---------- */
+  function injectStyles() {
+    if (document.getElementById('fx-styles')) return;
+    var s = document.createElement('style');
+    s.id = 'fx-styles';
+    s.textContent = EFFECTS.map(function (fx) { return '/* ' + fx.id + ' */\n' + fx.css; }).join('\n\n');
+    document.head.appendChild(s);
+  }
+
+  /* ---------- rail ---------- */
+  function renderRail() {
+    var list = [{ id: 'all', name: '全部' }].concat(CATEGORIES);
+    rail.innerHTML = '<div class="rl">CATEGORY</div>' + list.map(function (c) {
+      var n = c.id === 'all' ? EFFECTS.length : EFFECTS.filter(function (f) { return f.cat === c.id; }).length;
+      return '<button class="chip" data-cat="' + c.id + '" aria-pressed="' + (state.cat === c.id) + '">'
+        + c.name + '<span class="n">' + n + '</span></button>';
+    }).join('');
+  }
+
+  /* ---------- grid ---------- */
+  function cardHTML(fx) {
+    var kws = (fx.keywords || []).slice(0, 1);
+    var more = (fx.keywords || []).length - 1;
+    return '<article class="card" data-id="' + fx.id + '">'
+      + '<div class="stage" data-stage="' + fx.id + '"></div>'
+      + '<div class="card-body">'
+      +   '<div class="card-top"><h3>' + fx.name + '</h3><span class="badge">' + catOf(fx.cat).name + '</span></div>'
+      +   '<p class="card-en">' + fx.en + '</p>'
+      +   '<p class="card-def">' + fx.def + '</p>'
+      +   '<div class="card-foot">'
+      +     kws.map(function (k) { return '<span class="kw">' + k + '</span>'; }).join('')
+      +     (more > 0 ? '<span class="kw more">+' + more + '</span>' : '')
+      +     '<button class="tune">调参 ↗</button>'
+      +   '</div>'
+      + '</div></article>';
+  }
+
+  function render() {
+    clearCards();
+    var order = CATEGORIES.map(function (c) { return c.id; });
+    var list = EFFECTS.filter(function (fx) {
+      return (state.cat === 'all' || fx.cat === state.cat) && matches(fx, state.q);
+    }).sort(function (a, b) {
+      return order.indexOf(a.cat) - order.indexOf(b.cat);
+    });
+    grid.innerHTML = list.map(cardHTML).join('');
+    list.forEach(function (fx) {
+      var el = grid.querySelector('[data-stage="' + fx.id + '"]');
+      if (!el) return;
+      var c = mountInto(el, fx, defaults(fx));
+      if (c) cardCleanups.push(c);
+    });
+    empty.hidden = list.length > 0;
+    countEl.textContent = list.length;
+    Array.prototype.forEach.call(rail.querySelectorAll('.chip'), function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.cat === state.cat));
+    });
+  }
+
+  /* ---------- modal ---------- */
+  function openModal(fx) {
+    if (modalCleanup) { try { modalCleanup(); } catch (e) {} modalCleanup = null; }
+    mStage.removeAttribute('style');
+    var vals = defaults(fx);
+
+    mParams.innerHTML = fx.params.map(function (p) {
+      return '<label class="prow">'
+        + '<span class="pl">' + p.l + '</span>'
+        + '<input type="range" min="' + p.min + '" max="' + p.max + '" step="' + p.step + '" value="' + p.v + '" data-k="' + p.k + '" data-u="' + (p.u || '') + '" data-l="' + p.l + '">'
+        + '<span class="pv" data-pv="' + p.k + '">' + p.v + (p.u || '') + '</span>'
+        + '</label>';
+    }).join('');
+
+    mBody.innerHTML =
+      '<div class="ptitle"><h2 id="mtitle">' + fx.name + '</h2><span>' + fx.en + '</span></div>'
+      + '<p class="pdef">' + fx.def + '</p>'
+      + '<div class="sect"><h3>触发词 / AI KEYWORDS</h3><div class="tags">'
+      +   (fx.keywords || []).map(function (k) { return '<span class="tag">' + k + '</span>'; }).join('')
+      + '</div></div>'
+      + '<div class="sect"><h3>适用场景</h3><p class="note">' + fx.usage + '</p></div>'
+      + '<div class="sect"><h3>实现要点 / 常见坑</h3><p class="note">' + fx.note + '</p></div>'
+      + (fx.variants && fx.variants.length
+          ? '<div class="sect"><h3>变体</h3><div class="tags">'
+            + fx.variants.map(function (v) { return '<span class="tag">' + v + '</span>'; }).join('')
+            + '</div></div>' : '')
+      + '<div class="sect"><h3>复制即用</h3><div class="codebox">'
+      +   '<button class="copy" data-copy>复制</button>'
+      +   '<pre><code>' + esc(fx.code) + '</code></pre>'
+      + '</div></div>';
+
+    modalCleanup = mountInto(mStage, fx, vals);
+
+    Array.prototype.forEach.call(mParams.querySelectorAll('input'), function (inp) {
+      inp.addEventListener('input', function () {
+        var k = inp.dataset.k, v = parseFloat(inp.value);
+        mStage.style.setProperty(k, v + inp.dataset.u);
+        var out = mParams.querySelector('[data-pv="' + k + '"]');
+        if (out) out.textContent = v + inp.dataset.u;
+      });
+    });
+
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (modalCleanup) { try { modalCleanup(); } catch (e) {} modalCleanup = null; }
+    mStage.innerHTML = '';
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer;
+  function say(msg) {
+    toast.textContent = msg;
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('on'); }, 1600);
+  }
+
+  /* ---------- events ---------- */
+  rail.addEventListener('click', function (e) {
+    var b = e.target.closest('.chip');
+    if (!b) return;
+    state.cat = b.dataset.cat;
+    render();
+  });
+
+  var qTimer;
+  document.getElementById('q').addEventListener('input', function (e) {
+    clearTimeout(qTimer);
+    var v = e.target.value.trim();
+    qTimer = setTimeout(function () { state.q = v; render(); }, 110);
+  });
+
+  grid.addEventListener('click', function (e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var fx = EFFECTS.filter(function (f) { return f.id === card.dataset.id; })[0];
+    if (fx) openModal(fx);
+  });
+
+  modal.addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) { closeModal(); return; }
+    var c = e.target.closest('[data-copy]');
+    if (c) {
+      var code = mBody.querySelector('code').textContent;
+      var done = function () { c.textContent = '已复制'; say('代码已复制'); setTimeout(function () { c.textContent = '复制'; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done, fallback);
+      } else { fallback(); }
+      function fallback() {
+        var ta = document.createElement('textarea');
+        ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (err) { say('复制失败，请手动选中'); }
+        document.body.removeChild(ta);
+      }
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (!modal.hidden) closeModal();
+      else document.activeElement.blur();
+    }
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+      e.preventDefault();
+      document.getElementById('q').focus();
+    }
+  });
+
+  /* theme */
+  var root = document.documentElement;
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('mfx-theme'); } catch (e) {}
+  if (savedTheme) root.dataset.theme = savedTheme;
+
+  var themeBtn = document.getElementById('theme');
+  function syncThemeBtn() { themeBtn.textContent = root.dataset.theme === 'dark' ? '浅色' : '深色'; }
+  syncThemeBtn();
+  themeBtn.addEventListener('click', function () {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('mfx-theme', root.dataset.theme); } catch (e) {}
+    syncThemeBtn();
+  });
+
+  /* pause —— 不因系统"减少动效"自动暂停：这是一个动效展示页，默认必须能看见动 */
+  var pauseBtn = document.getElementById('pause');
+  pauseBtn.addEventListener('click', function () {
+    var p = root.dataset.paused === '1';
+    root.dataset.paused = p ? '0' : '1';
+    pauseBtn.setAttribute('aria-pressed', String(!p));
+    pauseBtn.textContent = p ? '暂停动效' : '继续动效';
+  });
+
+  /* init */
+  injectStyles();
+  renderRail();
+  render();
+})();
+</script>
+</body>
+</html>

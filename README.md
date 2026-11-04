@@ -18,12 +18,29 @@ open index.html      # macOS；Windows 双击，Linux 用 xdg-open
 
 支持：关键词搜索（中文名 / 英文名 / 口语别名）、分类筛选、实时调参、一键复制代码、深浅色切换、暂停动效。
 
+## 分享给别人
+
+`index.html` 通过 `<script src="effects.js">` 读数据，**单独发这一个文件对方只会看到空页面**。两种正确方式：
+
+1. **发单文件版**（推荐，微信/邮件都能直接传）
+   直接用 `dist/motion-lexicon.html`，已把数据内联进去，双击即开。
+   数据更新后重新生成：
+   ```bash
+   node tools/build-standalone.js
+   ```
+2. **发整个文件夹**（或用 GitHub Pages 链接）
+   `index.html` + `effects.js` 放在同一目录即可，`file://` 直接打开也能跑。
+
 ## 目录结构
 
 ```
 .
 ├── index.html          页面外壳：画廊、搜索、分类、调参弹窗、复制代码
 ├── effects.js          唯一需要改的数据文件（24 条效果）
+├── dist/
+│   └── motion-lexicon.html  单文件版：数据已内联，可直接发给别人
+├── tools/
+│   └── build-standalone.js  生成单文件版的脚本
 ├── docs/
 │   ├── SCHEMA.md       单条效果的字段规范（新增必须照此写）
 │   ├── GLOSSARY.md     术语表：已收录 24 条 + 40 条待收录

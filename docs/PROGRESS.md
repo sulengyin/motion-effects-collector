@@ -1,5 +1,15 @@
 # 进度 · PROGRESS
 
+## 2026-11-04 · 新增单文件版（分享用）
+
+**问题**：`index.html` 用 `<script src="effects.js">` 取数据，单独发 HTML 给对方会得到空页面。
+
+**方案**：`tools/build-standalone.js` 把数据内联成 `dist/motion-lexicon.html`（86KB，零外部引用）。
+
+**坑**：`effects.js` 里含有展示给用户的代码片段，其中 5 处 `</script>` 会在内联时被 HTML 解析器当成脚本结束标签，直接截断整个数据块。构建脚本统一转义为 `<\/script`（JS 字符串里等价），运行时还原正确。
+
+**校验**：产物含 2 个内联脚本块，分别 `new Function()` 语法通过；vm 中加载数据块得到 24 条效果；无 `<script src=` / `<link href=`；转义后字符串值仍为 `</script>`。
+
 ## 2026-11-04 · 发布到 GitHub
 
 - 仓库：https://github.com/sulengyin/motion-effects-collector （Public，默认分支 `main`）
