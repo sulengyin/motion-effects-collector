@@ -1,5 +1,12 @@
 # 进度 · PROGRESS
 
+## 2026-11-04 · 发布到 GitHub
+
+- 仓库：https://github.com/sulengyin/motion-effects-collector （Public，默认分支 `main`）
+- 首次推送：`55157d3` — 8 个文件（`index.html` / `effects.js` / `README.md` / `.gitignore` / `docs/` ×3 / `inbox/`）
+- `inbox/` 保留目录占位，视频、截图等原始素材不入库，避免仓库随时间膨胀
+- Pages 尚未开启：Settings → Pages → Source 选 `Deploy from a branch` → `main` / `/ (root)` → Save，之后地址为 https://sulengyin.github.io/motion-effects-collector/
+
 ## 2026-11-04 · 修复：卡片完全不动
 
 **现象**：用户反馈"看不到动态效果"。
