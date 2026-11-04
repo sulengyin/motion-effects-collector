@@ -11,7 +11,7 @@ const CATEGORIES = [
   { id: 'motion',      name: '运动',     en: 'Motion',     desc: '缓动、弹簧、交错' },
   { id: 'text',        name: '文字',     en: 'Text',       desc: '打字、浮现、滚动' },
   { id: 'transition',  name: '转场',     en: 'Transition', desc: '遮罩、推进、共享元素' },
-  { id: 'interaction', name: '交互反馈', en: 'Feedback',   desc: '涟漪、按压、悬浮' },
+  { id: 'interaction', name: '交互反馈', en: 'Feedback',   desc: '手势、状态反馈、按压' },
   { id: 'ambient',     name: '环境',     en: 'Ambient',    desc: '粒子、流体、光场' }
 ];
 
@@ -1240,6 +1240,369 @@ btn.addEventListener('click', function (e) {
     usage: '科技类首屏、AI 等待态、音乐播放器、深色登录页。',
     note: '点数控制在 30 以内、统一用 transform 位移；直接用 canvas 反而更简单，但 DOM 方便逐点调参。负延迟是让粒子"已经在路上"的关键。',
     variants: ['粒子 + 连线（星座）', '粒子跟随鼠标（排斥/吸引）']
+  },
+
+  /* ================= B1 交互反馈 ================= */
+
+  {
+    id: 'pull-refresh',
+    name: '下拉刷新',
+    en: 'Pull to Refresh',
+    cat: 'interaction',
+    def: '列表被向下拖出，顶部露出旋转指示器；松手后内容带回弹归位并触发刷新，是移动端最标准的手势反馈。',
+    keywords: ['下拉刷新', '下拉', '刷新动画', 'pull to refresh', 'ptr', 'refresh indicator'],
+    params: [
+      { k: '--ptr-d', l: '下拉距离', min: 20, max: 70, step: 2, v: 48, u: 'px' },
+      { k: '--ptr-t', l: '周期', min: 2.4, max: 5, step: 0.2, v: 3.4, u: 's' }
+    ],
+    stage: '<div class="ptr-box"><span class="ptr-spin"></span><div class="ptr-list"><i></i><i></i><i></i><i></i></div></div>',
+    css: `
+.ptr-box{position:relative;width:196px;height:132px;border-radius:12px;background:#0b0d12;border:1px solid rgba(255,255,255,.07);overflow:hidden}
+.ptr-spin{position:absolute;left:50%;top:11px;width:14px;height:14px;margin-left:-7px;border-radius:50%;
+  border:2px solid rgba(120,170,255,.22);border-top-color:#63b3ff;
+  animation:ptr-rot .9s linear infinite, ptr-fade var(--ptr-t,3.4s) linear infinite}
+.ptr-list{position:absolute;left:0;right:0;top:0;padding-top:32px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  animation:ptr-pull var(--ptr-t,3.4s) cubic-bezier(.33,1,.68,1) infinite}
+.ptr-list i{display:block;width:148px;height:14px;border-radius:4px;background:#161c2a}
+.ptr-list i:nth-child(2){width:118px;background:#131824}
+@keyframes ptr-rot{to{transform:rotate(1turn)}}
+@keyframes ptr-pull{
+  0%,10%{transform:translateY(0)}
+  34%{transform:translateY(var(--ptr-d,48px))}
+  54%{transform:translateY(var(--ptr-d,48px))}
+  80%,100%{transform:translateY(0)}}
+@keyframes ptr-fade{0%,8%{opacity:0}20%,52%{opacity:1}70%,100%{opacity:0}}`,
+    code: `<!-- HTML -->
+<div class="ptr">
+  <div class="spin"></div>
+  <ul><li></li><li></li><li></li></ul>
+</div>
+
+<style>
+.ptr{ position:relative; height:160px; overflow:hidden }
+.ptr ul{ padding-top:34px; margin:0; animation:ptr-pull 3.4s infinite }
+.spin{
+  position:absolute; left:50%; top:12px; width:14px; height:14px;
+  margin-left:-7px; border-radius:50%; opacity:0;
+  border:2px solid rgba(120,170,255,.22); border-top-color:#63b3ff;
+  animation:spin .9s linear infinite, fade 3.4s infinite;
+}
+@keyframes ptr-pull{
+  0%,10%  { transform:translateY(0) }
+  34%     { transform:translateY(48px) }
+  54%     { transform:translateY(48px) }
+  80%,100%{ transform:translateY(0) }
+}
+@keyframes fade{ 0%,8%{opacity:0} 20%,52%{opacity:1} 70%,100%{opacity:0} }
+@keyframes spin{ to{ transform:rotate(1turn) } }
+</style>`,
+    usage: '消息流、订单列表、动态时间线；iOS 与微信小程序的标配。',
+    note: '位移必须带阻尼（实际位移 ×0.4–0.6），否则像整块在滑；"刷新中"文案别跟着位移，读不清；回弹用 400–500ms 减速曲线，别用弹簧，会显轻浮。',
+    variants: ['下拉时头部插画逐帧展开', '刷新完成后顶部插入新条目']
+  },
+
+  {
+    id: 'long-press',
+    name: '长按展开',
+    en: 'Long Press Menu',
+    cat: 'interaction',
+    def: '按住按钮时环形进度沿边缘走满一圈，达到阈值后弹出上下文菜单；中途松手则取消。',
+    keywords: ['长按', '长按菜单', '按住展开', 'long press', 'press and hold', 'hold menu'],
+    params: [
+      { k: '--lp-t', l: '按住时长', min: 1.6, max: 5, step: 0.2, v: 3, u: 's' }
+    ],
+    stage: '<div class="lp-wrap"><div class="lp-btn"><svg class="lp-ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"></circle></svg><b>+</b></div><div class="lp-menu"><i></i><i></i><i></i></div></div>',
+    css: `
+.lp-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;width:150px;height:132px;padding-top:8px}
+.lp-btn{position:relative;width:44px;height:44px;border-radius:50%;background:#141a26;
+  border:1px solid rgba(255,255,255,.09);display:grid;place-items:center}
+.lp-btn b{font:300 19px/1 ui-monospace,monospace;color:#9fb0d0}
+.lp-ring{position:absolute;inset:-6px;width:56px;height:56px;transform:rotate(-90deg)}
+.lp-ring circle{fill:none;stroke:#5aa8ff;stroke-width:2;stroke-linecap:round;stroke-dasharray:119;
+  animation:lp-ring var(--lp-t,3s) linear infinite}
+.lp-menu{display:flex;flex-direction:column;gap:4px;transform-origin:50% 0;
+  animation:lp-open var(--lp-t,3s) cubic-bezier(.2,.9,.2,1) infinite}
+.lp-menu i{display:block;width:78px;height:16px;border-radius:6px;background:#1a2130;
+  border:1px solid rgba(120,170,255,.16)}
+@keyframes lp-ring{0%,12%{stroke-dashoffset:119}46%,100%{stroke-dashoffset:0}}
+@keyframes lp-open{
+  0%,46%{opacity:0;transform:translateY(-6px) scale(.92)}
+  56%,82%{opacity:1;transform:none}
+  92%,100%{opacity:0;transform:translateY(-6px) scale(.92)}}`,
+    code: `<!-- HTML -->
+<button class="lp-btn">
+  <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"/></svg>
+</button>
+
+<style>
+.lp-btn{ position:relative; width:44px; height:44px; border-radius:50% }
+.lp-btn svg{ position:absolute; inset:-6px; width:56px; height:56px;
+  transform:rotate(-90deg) }
+.lp-btn circle{
+  fill:none; stroke:#5aa8ff; stroke-width:2; stroke-linecap:round;
+  stroke-dasharray:119; stroke-dashoffset:119;
+  animation:ring 3s linear infinite;      /* 3s 走满 = 长按时长 */
+}
+@keyframes ring{
+  0%,12%  { stroke-dashoffset:119 }
+  46%,100%{ stroke-dashoffset:0 }
+}
+</style>`,
+    usage: '聊天里的加号、地图长按、列表项的多选与删除入口。',
+    note: '阈值低于 400ms 会误触，高于 800ms 用户以为没反应；必须有环形或缩放反馈，否则不知道还要按多久；手指移出热区要能取消。',
+    variants: ['长按 + 震动反馈（移动端）', '按住录音（波形随音量变化）']
+  },
+
+  {
+    id: 'swipe-delete',
+    name: '滑动删除',
+    en: 'Swipe to Delete',
+    cat: 'interaction',
+    def: '行内容向左滑出，右侧露出危险操作区；释放时按阈值决定吸附展开还是弹回原位。',
+    keywords: ['左滑删除', '侧滑', '滑动删除', 'swipe to delete', 'swipe action', 'slide to delete'],
+    params: [
+      { k: '--sd-x', l: '滑出宽度', min: 30, max: 80, step: 2, v: 56, u: 'px' },
+      { k: '--sd-t', l: '周期', min: 2.6, max: 5, step: 0.2, v: 3.4, u: 's' }
+    ],
+    stage: '<div class="sd-row"><div class="sd-del">删除</div><div class="sd-face"><i></i><i></i></div></div>',
+    css: `
+.sd-row{position:relative;width:190px;height:46px;border-radius:11px;overflow:hidden;background:#e5484d}
+.sd-del{position:absolute;inset:0 0 0 auto;width:var(--sd-x,56px);display:grid;place-items:center;
+  font:500 11px/1 ui-monospace,monospace;color:#fff;letter-spacing:.05em}
+.sd-face{position:absolute;inset:0;background:#11151f;border-radius:11px;
+  display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 14px;
+  animation:sd-slide var(--sd-t,3.4s) cubic-bezier(.2,.9,.2,1) infinite}
+.sd-face i{display:block;height:6px;border-radius:3px;background:#1e2637}
+.sd-face i:first-child{width:70px}
+@keyframes sd-slide{
+  0%,12%{transform:translateX(0)}
+  38%,58%{transform:translateX(calc(var(--sd-x,56px) * -1))}
+  82%,100%{transform:translateX(0)}}`,
+    code: `<!-- HTML -->
+<div class="swipe">
+  <div class="del">删除</div>
+  <div class="face">订单 #2048</div>
+</div>
+
+<style>
+.swipe{ position:relative; width:190px; height:46px;
+  border-radius:11px; overflow:hidden; background:#e5484d }
+.del{ position:absolute; inset:0 0 0 auto; width:56px;
+  display:grid; place-items:center; color:#fff }
+.face{ position:absolute; inset:0; background:#11151f;
+  animation:swipe-out 3.4s infinite }
+@keyframes swipe-out{
+  0%,12%  { transform:translateX(0) }
+  38%,58% { transform:translateX(-56px) }
+  82%,100%{ transform:translateX(0) }
+}
+</style>`,
+    usage: '消息列表、购物车、待办事项；iOS 原生邮件就是这个交互。',
+    note: '滑出阈值取行宽的 30–40%，低于阈值必须弹回；危险操作要么二次确认、要么给撤销入口；滑动过程中禁止纵向滚动争抢。',
+    variants: ['滑出后直接删除（无二次确认）', '双向滑动：左滑删除、右滑标记']
+  },
+
+  {
+    id: 'bottom-sheet',
+    name: '底部弹层',
+    en: 'Bottom Sheet',
+    cat: 'interaction',
+    def: '面板从屏幕底部升起，背景同时压暗；顶部有拖拽把手，可上拉铺满、下拉收起。',
+    keywords: ['底部弹层', '底部抽屉', '半屏弹窗', 'bottom sheet', 'drawer', 'action sheet'],
+    params: [
+      { k: '--bs-h', l: '弹层高度', min: 56, max: 112, step: 4, v: 86, u: 'px' },
+      { k: '--bs-t', l: '周期', min: 2.6, max: 5, step: 0.2, v: 3.6, u: 's' }
+    ],
+    stage: '<div class="bs-box"><div class="bs-veil"></div><div class="bs-sheet"><s></s><i></i><i></i></div></div>',
+    css: `
+.bs-box{position:relative;width:196px;height:132px;border-radius:12px;overflow:hidden;background:#0a0d14;border:1px solid rgba(255,255,255,.07)}
+.bs-veil{position:absolute;inset:0;background:rgba(0,0,0,.55);animation:bs-veil var(--bs-t,3.6s) linear infinite}
+.bs-sheet{position:absolute;left:0;right:0;bottom:0;height:var(--bs-h,86px);border-radius:14px 14px 0 0;
+  background:#121722;border-top:1px solid rgba(255,255,255,.1);
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding-top:9px;
+  animation:bs-up var(--bs-t,3.6s) cubic-bezier(.2,1.12,.3,1) infinite}
+.bs-sheet s{display:block;width:28px;height:3px;border-radius:2px;background:rgba(255,255,255,.22)}
+.bs-sheet i{display:block;width:118px;height:9px;border-radius:3px;background:#1c2433}
+@keyframes bs-up{0%,10%{transform:translateY(100%)}26%,72%{transform:translateY(0)}90%,100%{transform:translateY(100%)}}
+@keyframes bs-veil{0%,10%{opacity:0}26%,72%{opacity:1}90%,100%{opacity:0}}`,
+    code: `<!-- HTML -->
+<div class="sheet-wrap">
+  <div class="veil"></div>
+  <div class="sheet"><s></s></div>
+</div>
+
+<style>
+.sheet-wrap{ position:relative; height:170px; overflow:hidden }
+.veil{ position:absolute; inset:0; background:rgba(0,0,0,.55);
+  animation:veil 3.6s infinite }
+.sheet{
+  position:absolute; left:0; right:0; bottom:0; height:86px;
+  border-radius:14px 14px 0 0; background:#121722;
+  /* 上浮带过冲，落地才不呆 */
+  animation:sheet-up 3.6s cubic-bezier(.2,1.12,.3,1) infinite;
+}
+@keyframes sheet-up{
+  0%,10%  { transform:translateY(100%) }
+  26%,72% { transform:translateY(0) }
+  90%,100%{ transform:translateY(100%) }
+}
+@keyframes veil{ 0%,10%{opacity:0} 26%,72%{opacity:1} 90%,100%{opacity:0} }
+</style>`,
+    usage: '筛选、分享、详情预览、评论输入；移动端最高频的容器之一。',
+    note: '拖拽把手至少 32px 高，否则抓不住；遮罩点击要能关；键盘弹出时面板必须上移，不能被挡住；高度分档（半屏 / 全屏）比自由拖拽更好用。',
+    variants: ['多档高度（半屏 / 全屏）', '面板内嵌滚动，内容跟随手势']
+  },
+
+  {
+    id: 'sliding-indicator',
+    name: '指示器滑动',
+    en: 'Sliding Tab Indicator',
+    cat: 'interaction',
+    def: '分段控件里的滑块在选项之间移动，切换时带轻微过冲，用位置而不是描边来表达"当前选中"。',
+    keywords: ['指示器滑动', '标签滑动', '分段控件', 'sliding indicator', 'segmented control', 'tab indicator'],
+    params: [
+      { k: '--sti-t', l: '周期', min: 2.2, max: 5, step: 0.2, v: 3.6, u: 's' }
+    ],
+    stage: '<div class="sti"><span class="sti-pill"></span><b>全部</b><b>进行中</b><b>已完成</b></div>',
+    css: `
+.sti{position:relative;display:flex;width:192px;padding:4px;border-radius:11px;background:#0d1017;
+  border:1px solid rgba(255,255,255,.07)}
+.sti b{flex:1;text-align:center;font-weight:500;font-size:10.5px;line-height:26px;color:#8b94ab;position:relative;z-index:1}
+.sti-pill{position:absolute;top:4px;left:4px;height:26px;width:calc((100% - 8px) / 3);border-radius:8px;
+  background:#1b2233;border:1px solid rgba(120,170,255,.22);
+  animation:sti-move var(--sti-t,3.6s) cubic-bezier(.34,1.4,.64,1) infinite}
+@keyframes sti-move{
+  0%,12%{transform:translateX(0)}
+  30%,42%{transform:translateX(100%)}
+  60%,72%{transform:translateX(200%)}
+  90%,100%{transform:translateX(0)}}`,
+    code: `<!-- HTML -->
+<div class="tabs">
+  <span class="pill"></span>
+  <b>全部</b><b>进行中</b><b>已完成</b>
+</div>
+
+<style>
+.tabs{ position:relative; display:flex; width:192px; padding:4px;
+  border-radius:11px; background:#0d1017 }
+.tabs b{ flex:1; text-align:center; font-size:11px }
+.pill{
+  position:absolute; top:4px; left:4px; height:26px;
+  width:calc((100% - 8px) / 3); border-radius:8px; background:#1b2233;
+  animation:move 3.6s cubic-bezier(.34,1.4,.64,1) infinite;
+}
+@keyframes move{
+  0%,12%  { transform:translateX(0) }
+  30%,42% { transform:translateX(100%) }
+  60%,72% { transform:translateX(200%) }
+  90%,100%{ transform:translateX(0) }
+}
+</style>`,
+    usage: '列表筛选、订单状态、设置分组；比下拉菜单快一档的同级切换。',
+    note: '滑块宽度必须与选项等宽，否则位移距离算不准；切换用 250–350ms 的过冲曲线，超过 0.4s 就跟不上手指。',
+    variants: ['下划线式指示器（而非色块）', '指示器跟随手指拖拽']
+  },
+
+  {
+    id: 'success-check',
+    name: '成功对勾',
+    en: 'Success Check',
+    cat: 'interaction',
+    def: '圆圈先描出轮廓，再一笔画出对勾，最后整组轻微放大，用"画"出来的过程替代弹窗式提示。',
+    keywords: ['成功对勾', '打勾动画', '对勾描边', 'success check', 'checkmark', 'tick animation'],
+    params: [
+      { k: '--sc-t', l: '周期', min: 2, max: 5, step: 0.2, v: 2.8, u: 's' }
+    ],
+    stage: '<div class="sc-wrap"><svg class="sc-svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="19"></circle><path d="M15 25.5l6.5 6.5L34 18"></path></svg></div>',
+    css: `
+.sc-wrap{width:120px;height:120px;display:grid;place-items:center;
+  animation:sc-hold var(--sc-t,2.8s) ease-in-out infinite}
+.sc-svg{width:66px;height:66px;overflow:visible}
+.sc-svg circle,.sc-svg path{fill:none;stroke:#35d07f;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.sc-svg circle{stroke-dasharray:119;stroke-dashoffset:119;animation:sc-draw var(--sc-t,2.8s) linear infinite}
+.sc-svg path{stroke-dasharray:28;stroke-dashoffset:28;animation:sc-tick var(--sc-t,2.8s) linear infinite}
+@keyframes sc-hold{
+  0%,4%{opacity:0;transform:scale(.94)}
+  12%,88%{opacity:1;transform:scale(1)}
+  96%,100%{opacity:0;transform:scale(.94)}}
+@keyframes sc-draw{0%,10%{stroke-dashoffset:119}38%,100%{stroke-dashoffset:0}}
+@keyframes sc-tick{0%,38%{stroke-dashoffset:28}58%,100%{stroke-dashoffset:0}}`,
+    code: `<!-- HTML -->
+<svg class="ok" viewBox="0 0 48 48">
+  <circle cx="24" cy="24" r="19"/>
+  <path d="M15 25.5l6.5 6.5L34 18"/>
+</svg>
+
+<style>
+.ok{ width:66px; height:66px }
+.ok circle,.ok path{ fill:none; stroke:#35d07f; stroke-width:3;
+  stroke-linecap:round; stroke-linejoin:round }
+.ok circle{ stroke-dasharray:119; stroke-dashoffset:119;
+  animation:draw 2.8s linear infinite }
+.ok path{ stroke-dasharray:28; stroke-dashoffset:28;
+  animation:tick 2.8s linear infinite }
+@keyframes draw{ 0%,10%{stroke-dashoffset:119} 38%,100%{stroke-dashoffset:0} }
+@keyframes tick{ 0%,38%{stroke-dashoffset:28} 58%,100%{stroke-dashoffset:0} }
+</style>`,
+    usage: '支付成功、提交完成、文件上传、密码设置完成。',
+    note: '顺序不能反：先圆后勾；路径长度要用 getTotalLength() 取，别猜数字；完成态至少停留 1.5s 再退场，否则用户没看清。',
+    variants: ['失败态：圆圈变红 + 叉号', '加载态：圆圈持续旋转']
+  },
+
+  {
+    id: 'error-shake',
+    name: '错误抖动',
+    en: 'Error Shake',
+    cat: 'interaction',
+    def: '校验失败时输入框左右抖动、幅度逐次衰减，同时边框转红并浮出提示文案，用位移替代颜色单独报警。',
+    keywords: ['错误抖动', '报错抖动', '校验失败', 'error shake', 'shake', 'invalid input'],
+    params: [
+      { k: '--es-a', l: '抖动幅度', min: 3, max: 12, step: 1, v: 6, u: 'px' },
+      { k: '--es-t', l: '周期', min: 1.8, max: 4.5, step: 0.2, v: 2.6, u: 's' }
+    ],
+    stage: '<div class="es-wrap"><div class="es-field"><span>hello@</span></div><em class="es-msg">邮箱格式不正确</em></div>',
+    css: `
+.es-wrap{display:flex;flex-direction:column;align-items:center;gap:9px}
+.es-field{width:178px;height:34px;border-radius:9px;background:#11151f;border:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;padding:0 10px;
+  animation:es-shake var(--es-t,2.6s) linear infinite, es-red var(--es-t,2.6s) linear infinite}
+.es-field span{font:400 11px/1 ui-monospace,monospace;color:#8b96ad}
+.es-msg{font:400 10px/1 ui-monospace,monospace;color:#ff6b6b;font-style:normal;opacity:0;
+  animation:es-msg var(--es-t,2.6s) linear infinite}
+@keyframes es-shake{
+  0%,18%{transform:translateX(0)}
+  22%{transform:translateX(calc(var(--es-a,6px) * -1))}
+  26%{transform:translateX(var(--es-a,6px))}
+  30%{transform:translateX(calc(var(--es-a,6px) * -.66))}
+  34%{transform:translateX(calc(var(--es-a,6px) * .66))}
+  38%{transform:translateX(calc(var(--es-a,6px) * -.33))}
+  42%{transform:translateX(calc(var(--es-a,6px) * .33))}
+  46%,100%{transform:translateX(0)}}
+@keyframes es-red{
+  0%,18%{border-color:rgba(255,255,255,.1)}
+  22%,60%{border-color:rgba(255,107,107,.75)}
+  75%,100%{border-color:rgba(255,255,255,.1)}}
+@keyframes es-msg{0%,18%{opacity:0}24%,60%{opacity:1}72%,100%{opacity:0}}`,
+    code: `<!-- HTML -->
+<input class="field" value="hello@">
+<p class="err">邮箱格式不正确</p>
+
+<style>
+.field{ width:178px; height:34px; border:1px solid #e5484d;
+  animation:shake 2.6s infinite }
+.err{ opacity:0; animation:err 2.6s infinite }
+@keyframes shake{
+  0%,18%{ transform:translateX(0) }
+  22%{ transform:translateX(-6px) }  26%{ transform:translateX(6px) }
+  30%{ transform:translateX(-4px) }  34%{ transform:translateX(4px) }
+  38%{ transform:translateX(-2px) }  42%{ transform:translateX(2px) }
+  46%,100%{ transform:translateX(0) }
+}
+@keyframes err{ 0%,18%{opacity:0} 24%,60%{opacity:1} 72%,100%{opacity:0} }
+</style>`,
+    usage: '表单校验、登录失败、验证码错误、接口报错提示。',
+    note: '幅度 4–8px 足够，超过 12px 像整页在晃；来回 2–3 次就停，多了显廉价；必须配文字说明，光抖用户不知道错在哪。',
+    variants: ['横向抖动改为纵向弹跳', '错误摘要整体滑入']
   }
 
 ];
