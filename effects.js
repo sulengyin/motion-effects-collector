@@ -1603,6 +1603,295 @@ btn.addEventListener('click', function (e) {
     usage: '表单校验、登录失败、验证码错误、接口报错提示。',
     note: '幅度 4–8px 足够，超过 12px 像整页在晃；来回 2–3 次就停，多了显廉价；必须配文字说明，光抖用户不知道错在哪。',
     variants: ['横向抖动改为纵向弹跳', '错误摘要整体滑入']
+  },
+
+  /* ================= B2 转场 ================= */
+
+  {
+    id: 'shared-element',
+    name: '共享元素',
+    en: 'Shared Element',
+    cat: 'transition',
+    def: '缩略图在两个视图之间保持同一个"物体"连续移动并放大，列表淡出、详情淡入，让用户知道自己是顺着同一件东西进去的。',
+    keywords: ['共享元素', '元素过渡', '图片放大过渡', 'shared element', 'hero transition', 'morph transition'],
+    params: [
+      { k: '--se-t', l: '周期', min: 2.4, max: 5, step: 0.2, v: 3.4, u: 's' }
+    ],
+    stage: '<div class="se-wrap"><div class="se-list"><i></i><i></i><i></i></div><div class="se-detail"><span class="se-hero"></span><i></i><i></i></div><span class="se-thumb"></span></div>',
+    css: `
+.se-wrap{position:relative;width:200px;height:132px}
+.se-list{position:absolute;left:0;top:14px;width:58px;display:flex;flex-direction:column;gap:7px;
+  animation:se-list var(--se-t,3.4s) ease-in-out infinite}
+.se-list i{display:block;height:12px;border-radius:3px;background:#161c2a}
+.se-detail{position:absolute;left:76px;top:4px;width:120px;height:124px;border-radius:10px;background:#10141d;
+  border:1px solid rgba(255,255,255,.08);padding:10px;opacity:0;
+  animation:se-detail var(--se-t,3.4s) ease-in-out infinite}
+.se-detail .se-hero{display:block;width:100px;height:48px;border-radius:9px;background:#182031}
+.se-detail i{display:block;height:7px;border-radius:3px;background:#1b2231;margin-top:9px}
+.se-detail i:last-child{width:62px}
+.se-thumb{position:absolute;left:4px;top:20px;width:34px;height:24px;border-radius:6px;z-index:2;
+  background:linear-gradient(135deg,#3f5a8a,#1b2437);border:1px solid rgba(140,175,255,.35);
+  animation:se-fly var(--se-t,3.4s) cubic-bezier(.22,1,.36,1) infinite}
+@keyframes se-fly{
+  0%,10%{left:4px;top:20px;width:34px;height:24px;border-radius:6px}
+  42%,72%{left:86px;top:14px;width:100px;height:48px;border-radius:9px}
+  88%,100%{left:4px;top:20px;width:34px;height:24px;border-radius:6px}}
+@keyframes se-list{
+  0%,10%{opacity:1;transform:translateX(0)}
+  32%,74%{opacity:.18;transform:translateX(-8px)}
+  88%,100%{opacity:1;transform:translateX(0)}}
+@keyframes se-detail{
+  0%,22%{opacity:0;transform:translateX(8px)}
+  40%,74%{opacity:1;transform:translateX(0)}
+  86%,100%{opacity:0;transform:translateX(8px)}}`,
+    code: `/* FLIP：先测量两端，再只动 transform */
+const first = thumb.getBoundingClientRect();
+openDetail();
+const last = hero.getBoundingClientRect();
+
+thumb.style.transition = 'none';
+thumb.style.transform =
+  \`translate(\${first.left}px,\${first.top}px) scale(\${first.width / last.width})\`;
+
+requestAnimationFrame(() => {
+  thumb.style.transition = 'transform .42s cubic-bezier(.22,1,.36,1)';
+  thumb.style.transform = \`translate(\${last.left}px,\${last.top}px) scale(1)\`;
+});
+/* 结束时把真实元素换回来，并从缩略图位置移除 */`,
+    usage: '列表 → 详情、商品图 → 大图、头像 → 个人页、卡片 → 全屏播放器。',
+    note: '两端必须真的是同一个元素（或用 FLIP 测量），否则会闪；过渡中不要改文字内容和字号，长度一变就跳；返回动画必须能逆放，不能直接消失。',
+    variants: ['图片放大 + 标题同飞', '返回时反向收起']
+  },
+
+  {
+    id: 'card-expand',
+    name: '卡片展开',
+    en: 'Card Expand',
+    cat: 'transition',
+    def: '卡片在原地长成详情面板，圆角与尺寸同步插值，内部内容延后浮现，没有第二个页面参与。',
+    keywords: ['卡片展开', '原地展开', '扩展卡片', 'card expand', 'expandable card', 'grow transition'],
+    params: [
+      { k: '--ce-t', l: '周期', min: 2.2, max: 5, step: 0.2, v: 3.2, u: 's' }
+    ],
+    stage: '<div class="ce-box"><div class="ce-card"><span class="ce-t"></span><div class="ce-body"><i></i><i></i></div></div></div>',
+    css: `
+.ce-box{position:relative;width:200px;height:132px}
+.ce-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:44px;border-radius:10px;
+  background:#141a26;border:1px solid rgba(255,255,255,.09);overflow:hidden;
+  animation:ce-grow var(--ce-t,3.2s) cubic-bezier(.22,1,.36,1) infinite}
+.ce-t{position:absolute;left:10px;top:10px;width:24px;height:6px;border-radius:3px;background:#31405c}
+.ce-body{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;opacity:0;
+  animation:ce-in var(--ce-t,3.2s) ease infinite}
+.ce-body i{display:block;height:6px;border-radius:3px;background:#1e2637}
+.ce-body i:last-child{width:60%}
+@keyframes ce-grow{
+  0%,12%{width:64px;height:44px;border-radius:10px}
+  42%,72%{width:176px;height:112px;border-radius:14px}
+  90%,100%{width:64px;height:44px;border-radius:10px}}
+@keyframes ce-in{
+  0%,34%{opacity:0;transform:translateY(6px)}
+  50%,72%{opacity:1;transform:none}
+  84%,100%{opacity:0;transform:translateY(6px)}}`,
+    code: `<!-- 用宽高而不是 scale，文字才不会被拉扁 -->
+<div class="card" data-expanded="false">
+  <h3>标题</h3>
+  <p class="body">详情内容</p>
+</div>
+
+<style>
+.card{
+  width:64px; height:44px; border-radius:10px; overflow:hidden;
+  transition:width .38s cubic-bezier(.22,1,.36,1),
+             height .38s cubic-bezier(.22,1,.36,1),
+             border-radius .38s;
+}
+.card[data-expanded="true"]{ width:176px; height:112px; border-radius:14px }
+.card .body{ opacity:0; transform:translateY(6px);
+  transition:opacity .22s .18s, transform .22s .18s }
+.card[data-expanded="true"] .body{ opacity:1; transform:none }
+</style>`,
+    usage: '设置项展开、商品规格、折叠面板、日程详情。',
+    note: '别用 scale 放大整卡，文字会被拉伸；圆角要一起插值，否则中途会出现方角；内容延后 150–200ms 进场，不然会挤在变形过程中。',
+    variants: ['卡片展开成底部弹层', '网格 → 详情（其余卡片同时收起）']
+  },
+
+  {
+    id: 'slide-push',
+    name: '横向推入',
+    en: 'Slide Push',
+    cat: 'transition',
+    def: '旧页向左移出并压暗，新页从右侧整屏推入，用方向感告诉用户"进入了下一层"。',
+    keywords: ['横向推入', '侧滑转场', '页面推入', 'slide push', 'push transition', 'page slide'],
+    params: [
+      { k: '--sp-t', l: '周期', min: 2.2, max: 5, step: 0.2, v: 3.2, u: 's' }
+    ],
+    stage: '<div class="sp-wrap"><div class="sp-old"><b>列表</b><i></i><i></i></div><div class="sp-new"><b>详情</b><i></i><i></i></div></div>',
+    css: `
+.sp-wrap{position:relative;width:200px;height:132px;border-radius:12px;overflow:hidden;background:#0a0d13;border:1px solid rgba(255,255,255,.07)}
+.sp-old,.sp-new{position:absolute;inset:0;padding:16px 14px;display:flex;flex-direction:column;gap:8px}
+.sp-old{background:#0e131c;animation:sp-old var(--sp-t,3.2s) cubic-bezier(.32,.72,0,1) infinite}
+.sp-new{background:#121a29;box-shadow:-14px 0 28px rgba(0,0,0,.5);animation:sp-new var(--sp-t,3.2s) cubic-bezier(.32,.72,0,1) infinite}
+.sp-old b,.sp-new b{font:500 10px/1 ui-monospace,monospace;letter-spacing:.16em;color:#8fa0c4}
+.sp-old i,.sp-new i{display:block;height:8px;border-radius:3px;background:rgba(255,255,255,.08)}
+.sp-new i{background:rgba(120,170,255,.18)}
+@keyframes sp-old{
+  0%,12%{transform:translateX(0);filter:brightness(1)}
+  44%,72%{transform:translateX(-32%);filter:brightness(.55)}
+  88%,100%{transform:translateX(0);filter:brightness(1)}}
+@keyframes sp-new{
+  0%,12%{transform:translateX(100%)}
+  44%,72%{transform:translateX(0)}
+  88%,100%{transform:translateX(100%)}}`,
+    code: `<!-- 两层页面叠放，只动 transform -->
+<div class="stack">
+  <section class="page old">列表</section>
+  <section class="page new">详情</section>
+</div>
+
+<style>
+.stack{ position:relative; overflow:hidden }
+.page{ position:absolute; inset:0;
+  transition:transform .40s cubic-bezier(.32,.72,0,1), filter .40s }
+.new{ transform:translateX(100%); box-shadow:-14px 0 28px rgba(0,0,0,.5) }
+.stack[data-view="detail"] .old{ transform:translateX(-32%); filter:brightness(.55) }
+.stack[data-view="detail"] .new{ transform:translateX(0) }
+</style>`,
+    usage: '列表进详情、设置进二级页、iOS 导航栈的默认转场。',
+    note: '背景页位移要小于前景（1/3 左右），否则像两块贴纸一起平移；推入过程要能被返回手势中断；阴影方向必须朝左，否则层级读反。',
+    variants: ['带视差的推入（背景移 1/3）', '手势跟手拖拽返回']
+  },
+
+  {
+    id: 'crossfade',
+    name: '叠化转场',
+    en: 'Crossfade',
+    cat: 'transition',
+    def: '新旧两屏在同一个位置交叉淡入淡出，中间有一段两者同时可见的重叠期，没有位移也没有缩放。',
+    keywords: ['叠化', '交叉淡化', '淡入淡出转场', 'crossfade', 'dissolve', 'fade transition'],
+    params: [
+      { k: '--cf-t', l: '周期', min: 2.2, max: 5, step: 0.2, v: 3.4, u: 's' }
+    ],
+    stage: '<div class="cf-wrap"><div class="cf-a"><b>SCENE A</b><i></i><i></i></div><div class="cf-b"><b>SCENE B</b><i></i><i></i></div></div>',
+    css: `
+.cf-wrap{position:relative;width:200px;height:132px;border-radius:12px;overflow:hidden;background:#0a0d13;border:1px solid rgba(255,255,255,.07)}
+.cf-a,.cf-b{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:0 18px}
+.cf-a{background:linear-gradient(135deg,#182238,#0c1018);animation:cf-a var(--cf-t,3.4s) ease-in-out infinite}
+.cf-b{background:linear-gradient(135deg,#2a1b33,#0c1018);animation:cf-b var(--cf-t,3.4s) ease-in-out infinite}
+.cf-a b,.cf-b b{font:600 11px/1 ui-monospace,monospace;letter-spacing:.2em;color:#dfe8ff}
+.cf-a i,.cf-b i{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.14)}
+.cf-a i:last-child,.cf-b i:last-child{width:56%}
+@keyframes cf-a{0%,18%{opacity:1}48%,72%{opacity:0}92%,100%{opacity:1}}
+@keyframes cf-b{0%,18%{opacity:0}48%,72%{opacity:1}92%,100%{opacity:0}}`,
+    code: `<!-- 两屏叠放，交替透明度 -->
+<div class="fade">
+  <section class="a">A</section>
+  <section class="b">B</section>
+</div>
+
+<style>
+.fade{ position:relative; display:grid }
+.fade > *{ grid-area:1/1; transition:opacity .45s ease-in-out }
+.b{ opacity:0; pointer-events:none }
+.fade[data-scene="b"] .a{ opacity:0; pointer-events:none }
+.fade[data-scene="b"] .b{ opacity:1; pointer-events:auto }
+</style>`,
+    usage: '同层级内容切换、图片轮播、主题切换、弹窗内容替换。',
+    note: '两屏同时可见时必须切 pointer-events，否则会点到下层；纯叠化没有方向感，层级关系重要的页面要加一点位移或缩放；重叠期给到 15–20% 才不显生硬。',
+    variants: ['叠化 + 轻微缩放', '叠化 + 模糊']
+  },
+
+  {
+    id: 'number-ticker',
+    name: '数字翻滚',
+    en: 'Number Ticker',
+    cat: 'transition',
+    def: '每一位数字是一条竖排滚轮，数值变化时各列独立向上滚动到目标位，末位转得最快，像机械里程表。',
+    keywords: ['数字翻滚', '滚轮数字', '里程表', 'number ticker', 'odometer', 'digit roll'],
+    params: [
+      { k: '--tk-t', l: '周期', min: 2.4, max: 5, step: 0.2, v: 3.4, u: 's' },
+      { k: '--tk-h', l: '字高', min: 22, max: 38, step: 1, v: 30, u: 'px' }
+    ],
+    stage: '<div class="tk-wrap"><span class="tk-fix">1</span><span class="tk-sep">,</span><span class="tk-col"><span class="tk-strip tk-c2"><b>0</b><b>1</b><b>2</b><b>3</b></span></span><span class="tk-col"><span class="tk-strip tk-c3"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b><b>9</b><b>0</b></span></span><span class="tk-col"><span class="tk-strip tk-c4"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b></span></span></div>',
+    css: `
+.tk-wrap{display:flex;align-items:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;
+  font-size:var(--tk-h,30px);line-height:var(--tk-h,30px);height:var(--tk-h,30px);color:#e9ecf3;overflow:hidden;
+  animation:tk-fade var(--tk-t,3.4s) linear infinite}
+.tk-fix,.tk-sep{height:var(--tk-h,30px)}
+.tk-sep{opacity:.5;margin:0 1px}
+.tk-col{position:relative;height:var(--tk-h,30px);width:calc(var(--tk-h,30px) * .62);overflow:hidden}
+.tk-strip{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center}
+.tk-strip b{font-weight:600;height:var(--tk-h,30px);line-height:var(--tk-h,30px)}
+.tk-c2{animation:tk-c2 var(--tk-t,3.4s) cubic-bezier(.16,1,.3,1) infinite}
+.tk-c3{animation:tk-c3 var(--tk-t,3.4s) cubic-bezier(.16,1,.3,1) infinite}
+.tk-c4{animation:tk-c4 var(--tk-t,3.4s) cubic-bezier(.16,1,.3,1) infinite}
+@keyframes tk-c2{
+  0%,12%{transform:translateY(calc(var(--tk-h,30px) * -2))}
+  48%,100%{transform:translateY(calc(var(--tk-h,30px) * -3))}}
+@keyframes tk-c3{
+  0%,12%{transform:translateY(calc(var(--tk-h,30px) * -9))}
+  48%,100%{transform:translateY(calc(var(--tk-h,30px) * -10))}}
+@keyframes tk-c4{
+  0%,12%{transform:translateY(0)}
+  48%,100%{transform:translateY(calc(var(--tk-h,30px) * -8))}}
+@keyframes tk-fade{0%,5%{opacity:0}9%,88%{opacity:1}96%,100%{opacity:0}}`,
+    code: `<!-- 每一位一条竖排滚轮 -->
+<span class="ticker">
+  <span class="col"><span style="--n:2">0123456789</span></span>
+</span>
+
+<style>
+.ticker{ display:flex; font:600 30px/30px ui-monospace,monospace }
+.col{ height:30px; overflow:hidden; width:19px }
+.col > span{
+  display:flex; flex-direction:column; align-items:center;
+  transform:translateY(calc(var(--n) * -30px));
+  transition:transform .6s cubic-bezier(.16,1,.3,1);
+}
+</style>`,
+    usage: '金额、积分、倒计时、实时统计、排行榜分数。',
+    note: '必须等宽字体，否则数字宽度变化会左右抖；每位单独 overflow:hidden，否则能看到上一位的脚；循环或重置时要遮住跳变，否则会出现"弹回"。',
+    variants: ['金额带千分位', '带涨跌色的正负翻滚']
+  },
+
+  {
+    id: 'toast',
+    name: '轻提示进出',
+    en: 'Toast In / Out',
+    cat: 'transition',
+    def: '一条短提示从底部上浮、轻微过冲后停住，停留两秒再向上淡出，不打断当前操作。',
+    keywords: ['轻提示', 'Toast', '提示条', '消息提示', 'toast in out', 'snackbar'],
+    params: [
+      { k: '--ts-t', l: '周期', min: 2.4, max: 5, step: 0.2, v: 3.2, u: 's' }
+    ],
+    stage: '<div class="ts-wrap"><div class="ts-toast"><s></s>已保存到「我的收藏」</div></div>',
+    css: `
+.ts-wrap{position:relative;width:200px;height:132px;border-radius:12px;background:#0a0d14;border:1px solid rgba(255,255,255,.07);overflow:hidden}
+.ts-toast{position:absolute;left:50%;bottom:18px;display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;
+  background:#1a2130;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 26px rgba(0,0,0,.45);
+  font:400 10.5px/1 ui-monospace,monospace;color:#d5ddeb;white-space:nowrap;
+  animation:ts-in var(--ts-t,3.2s) cubic-bezier(.22,1,.36,1) infinite}
+.ts-toast s{display:block;width:6px;height:6px;border-radius:50%;background:#35d07f;box-shadow:0 0 8px #35d07f}
+@keyframes ts-in{
+  0%,10%{opacity:0;transform:translate(-50%,16px) scale(.96)}
+  24%{opacity:1;transform:translate(-50%,-2px) scale(1)}
+  32%,68%{opacity:1;transform:translate(-50%,0) scale(1)}
+  86%,100%{opacity:0;transform:translate(-50%,-14px) scale(.98)}}`,
+    code: `<!-- 进场上浮带过冲，出场向上淡出 -->
+<div class="toast" role="status">已保存</div>
+
+<style>
+.toast{
+  position:fixed; left:50%; bottom:32px;
+  transform:translate(-50%,16px); opacity:0;
+  transition:transform .28s cubic-bezier(.22,1,.36,1), opacity .2s;
+  pointer-events:none;
+}
+.toast.on{ transform:translate(-50%,0); opacity:1 }
+.toast.leaving{ transform:translate(-50%,-14px); opacity:0 }
+</style>`,
+    usage: '保存成功、已复制、网络异常、撤销操作。',
+    note: '入场 250–320ms、停留至少 2s、出场 180–220ms；同一时刻只留一条，新提示顶掉旧的；别放在会被键盘或底部导航遮住的位置。',
+    variants: ['顶部下滑通知条', '多条堆叠（最多 3 条）']
   }
 
 ];
