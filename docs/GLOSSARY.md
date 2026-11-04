@@ -2,7 +2,7 @@
 
 这份表是「AI 能听懂」的底座：只要说出左列任一个词，就应直接对应到一个实现，不需要再解释"它长什么样"。
 
-## 已收录（37）
+## 已收录（42）
 
 | 中文标准名 | 英文标准名 | 分类 | 常用触发词 | 一句话 |
 |---|---|---|---|---|
@@ -20,7 +20,7 @@
 | 挤压拉伸 | Squash & Stretch | 形变 | 挤压 / 拉伸 / squash | 运动时拉长、撞击时压扁，伪造重量 |
 | 交错入场 | Stagger In | 运动 | 错峰入场 / 依次出现 / stagger | 同组元素按序上浮淡入 |
 | 弹簧回弹 | Spring Bounce | 运动 | 弹性 / Q 弹 / bounce | 越过目标点再回弹，配合挤压 |
-| 视差滚动 | Parallax Scroll | 运动 | 层移 / 滚动视差 / parallax | 前后景按不同速率随滚动位移 |
+| 视差滚动 | Parallax Scroll | 滚动 | 层移 / 滚动视差 / parallax | 前后景按不同速率随滚动位移 |
 | 打字机 | Typewriter | 文字 | 打字效果 / 逐字打印 / typing | 按字符逐格显示 + 闪烁光标 |
 | 逐字浮现 | Character Reveal | 文字 | 文字上浮 / 遮罩揭示 / mask reveal | 每字从遮罩下方升起并去模糊 |
 | 数字滚动 | Count Up | 文字 | 数字跳动 / 计数动画 / count up | 数值从 0 递增，末段减速停住 |
@@ -43,13 +43,19 @@
 | 叠化转场 | Crossfade | 转场 | 叠化 / 交叉淡化 / dissolve | 两屏同位交叉透明度，无位移无缩放 |
 | 数字翻滚 | Number Ticker | 转场 | 滚轮数字 / 里程表 / odometer | 每位是一条竖排滚轮，各自滚到目标位 |
 | 轻提示进出 | Toast In / Out | 转场 | 轻提示 / 提示条 / snackbar | 底部上浮过冲停住，停留后向上淡出 |
+| 滚动进度 | Scroll Progress | 滚动 | 阅读进度 / 进度条 / reading progress | 顶部细条随滚动比例推进，走完刚好到底 |
+| 粘性堆叠 | Sticky Stack | 滚动 | 卡片堆叠 / 堆叠滚动 / sticky stack | 卡片滚到顶部停住，后一张压上来形成叠层 |
+| 横向吸附 | Scroll Snap | 滚动 | 吸附滚动 / 轮播吸附 / scroll snap | 横滑结束自动对齐到最近一屏，不停在半张卡上 |
+| 滚动缩放 | Scroll Scale | 滚动 | 镜头拉远 / 滚动画布 / scale on scroll | 进入时放大局部，随滚动退回全景 |
+| 回到顶部 | Back to Top | 滚动 | 返回顶部 / 置顶按钮 / back to top | 滚过一屏后浮出圆钮，点击平滑回顶 |
 
 ## 待收录
 
 **光效**：霓虹脉冲 · 体积光 · 光晕溢出（bloom）· 描边高亮 · 星光闪烁
 **材质**：金属拉丝 · 拟物浮雕（neumorphism）· 纸张质感 · 玻璃折射（refraction）
 **形变**：果冻形变（jelly）· 液态融合（gooey）· 卡片翻转（flip）· 折叠展开 · 形状变形（morph）· 弹性跟随
-**运动**：缓动曲线对比（easing）· 滚动驱动（scroll-driven）· 惯性滚动 · 跟随延迟（lag）· 呼吸缩放 · 拖拽回弹（drag snap）
+**运动**：缓动曲线对比（easing）· 跟随延迟（lag）· 呼吸缩放 · 拖拽回弹（drag snap）
+**滚动**：惯性滚动（momentum）· 整屏翻页（full-page snap）· 滚动锁定 / 劫持 · 滚动触发显现（scroll reveal）
 **文字**：描边绘制（svg stroke）· 拆字散落 · 文字遮罩图（text clip image）· 逐词浮现 · 文字挤压
 **转场**：斜切擦除 · 故障转场（glitch）· 液体过渡
 **交互反馈**：悬停浮起（hover lift）· 鼠标拖尾 · 进度描边 · 拖拽排序
