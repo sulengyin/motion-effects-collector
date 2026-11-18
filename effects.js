@@ -2247,7 +2247,494 @@ requestAnimationFrame(() => {
     usage: '长文、列表流、搜索结果、移动端详情页。',
     note: '阈值按一屏高度定，别一滚就冒；用 smooth 而不是瞬间跳，否则会丢失位置感；按钮要避开底部固定导航和系统手势区。',
     variants: ['环形进度 + 回顶（滚动位置可视化）', '到达底部才出现的「回顶」文字链']
+  },
+
+  /* ============ 增量收集 · 12 条（对照 sulengyin/motion-effects-collector 查缺） ============ */
+
+  /* ---- 增量 1 / 逐行升起（新增 · 文字） ---- */
+  {
+    id: 'line-reveal',
+    name: '逐行升起【新增】',
+    en: 'Line Reveal',
+    cat: 'text',
+    def: '【新增】多行文案被裁切容器逐行遮住，从下方依次升起并轻微去模糊；标题组、诗句、字幕的质感入场。原库仅有逐字浮现/交错入场，无"按行"遮罩升起。',
+    keywords: ['逐行升起', '文字上浮', '按行出现', 'line reveal', 'stagger lines', 'mask text'],
+    params: [
+      { k: '--lr-dur', l: '单行时长', min: 0.4, max: 2, step: 0.1, v: 0.9, u: 's' },
+      { k: '--lr-gap', l: '行间隔', min: 0, max: 0.4, step: 0.02, v: 0.14, u: 's' }
+    ],
+    stage: '<div class="lr-box"><span class="lr-line" style="--i:0"><i class="lr-in">让每一行字，都有自己的登场时刻</i></span><span class="lr-line" style="--i:1"><i class="lr-in">遮罩在下，文字在上，节奏由间隔决定</i></span><span class="lr-line" style="--i:2"><i class="lr-in">交错一停，阅读顺序自然成立</i></span></div>',
+    css: `
+.lr-box{font-size:14px;line-height:1.95;color:#e8ecf4;font-weight:600;text-align:center}
+.lr-line{display:block;overflow:hidden}
+.lr-in{display:block;font-style:normal;transform:translateY(115%);filter:blur(4px);animation:lr-up var(--lr-dur,0.9s) cubic-bezier(.22,1,.36,1) forwards;animation-delay:calc(var(--i) * var(--lr-gap,0.14s))}
+@keyframes lr-up{to{transform:translateY(0);filter:blur(0)}}`,
+    code: `<!-- HTML -->
+<div class="reveal">
+  <span style="--i:0"><i>让每一行字，都有自己的登场时刻</i></span>
+  <span style="--i:1"><i>遮罩在下，文字在上，节奏由间隔决定</i></span>
+  <span style="--i:2"><i>交错一停，阅读顺序自然成立</i></span>
+</div>
+<style>
+.reveal{font:600 16px/1.9 system-ui;text-align:center}
+.reveal span{display:block;overflow:hidden}
+.reveal i{display:block;font-style:normal;transform:translateY(115%);filter:blur(4px);
+  animation:up .9s cubic-bezier(.22,1,.36,1) forwards;animation-delay:calc(var(--i)*.14s)}
+@keyframes up{to{transform:translateY(0);filter:blur(0)}}
+</style>`,
+    usage: 'Hero 标题组、歌词/诗句、字幕、列表文案的依次入场。',
+    note: '每行外层 overflow:hidden 当遮罩，内层 translateY(115%)→0；stagger = --i × 间隔。行数多时把间隔压到 60ms 以内，否则最后一行等太久。',
+    variants: ['逐词升起（把行切成词）', '升起 + 字重变化', '滚动进入视口时触发']
+  },
+
+  /* ---- 增量 2 / 图标变形（新增 · 形变） ---- */
+  {
+    id: 'icon-morph',
+    name: '图标变形【新增】',
+    en: 'Icon Morph',
+    cat: 'transform',
+    def: '【新增】同一图形在两种语义间连续变形（＋→×、汉堡→箭头），用旋转/路径插值代替图标硬切换。原库"形变"类无此项，待收录清单有"形状变形 morph"未落地。',
+    keywords: ['图标变形', '图标变换', '汉堡变叉', '加号变关闭', 'icon morph', 'morphing icon', 'toggle icon'],
+    params: [{ k: '--im-dur', l: '变形时长', min: 0.15, max: 1, step: 0.05, v: 0.38, u: 's' }],
+    stage: '<button class="im-btn" aria-label="展开"><span class="im-g"><i></i><i></i></span></button>',
+    css: `
+.im-btn{width:72px;height:72px;border:none;border-radius:18px;background:#8b8cff;cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 24px rgba(139,140,255,.35)}
+.im-g{position:relative;width:32px;height:32px;transition:transform var(--im-dur,0.38s) cubic-bezier(.6,-.4,.3,1.4)}
+.im-g i{position:absolute;left:50%;top:50%;width:26px;height:3px;border-radius:2px;background:#0a0c11;transition:transform var(--im-dur,0.38s) cubic-bezier(.6,-.4,.3,1.4)}
+.im-g i:first-child{transform:translate(-50%,-50%) rotate(0deg)}
+.im-g i:last-child{transform:translate(-50%,-50%) rotate(90deg)}
+.im-btn.open .im-g{transform:rotate(135deg)}
+.im-btn.open .im-g i{transform:translate(-50%,-50%) rotate(0deg)}`,
+    mount: function (el) {
+      var b = el.querySelector('.im-btn');
+      if (!b) return;
+      var fn = function (e) { e.stopPropagation(); b.classList.toggle('open'); };
+      b.addEventListener('click', fn);
+      return function () { b.removeEventListener('click', fn); };
+    },
+    code: `<!-- HTML：点按钮在 ＋ / × 之间变形 -->
+<button class="morph" aria-expanded="false"><span><i></i><i></i></span></button>
+<style>
+.morph{width:64px;height:64px;border:0;border-radius:16px;background:#8b8cff;cursor:pointer;display:grid;place-items:center}
+.morph span{position:relative;width:28px;height:28px;transition:transform .38s cubic-bezier(.6,-.4,.3,1.4)}
+.morph i{position:absolute;left:50%;top:50%;width:24px;height:3px;border-radius:2px;background:#0a0c11;transition:transform .38s cubic-bezier(.6,-.4,.3,1.4)}
+.morph i:first-child{transform:translate(-50%,-50%) rotate(0)}
+.morph i:last-child{transform:translate(-50%,-50%) rotate(90deg)}
+.morph.open span{transform:rotate(135deg)}
+.morph.open i{transform:translate(-50%,-50%) rotate(0)}
+</style>
+<script>document.querySelector('.morph').onclick=function(e){e.stopPropagation();this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'))}<\/script>`,
+    usage: '展开/收起开关、播放/暂停、菜单按钮等需要在两个语义间过渡的图标。',
+    note: '＋→× 只需整体旋转 135° 并让两根线重合，比两张图标 opacity 互换连贯；真正的 path morph 需等宽路径点（flubber / SMIL），本例是零依赖的旋转近似。已 stopPropagation，点卡片其他区域仍可打开详情。',
+    variants: ['播放↔暂停（两条竖线缩放）', '汉堡→箭头（三段位移）', 'SVG path d 插值（flubber）']
+  },
+
+  /* ---- 增量 3 / 描边动画（新增 · 文字） ---- */
+  {
+    id: 'stroke-draw',
+    name: '描边动画【新增】',
+    en: 'Stroke Draw',
+    cat: 'text',
+    def: '【新增】用 stroke-dashoffset 让路径沿自身"一笔画"出来，可画轮廓、签名、下划线与图标。原库"成功对勾"是单条特例，此为通用绘制。',
+    keywords: ['描边动画', '一笔画', 'svg 描边', '线条绘制', 'stroke draw', 'draw svg', '签名动画', 'svg stroke'],
+    params: [{ k: '--dr-dur', l: '绘制时长', min: 0.4, max: 4, step: 0.1, v: 1.8, u: 's' }],
+    stage: '<svg class="dr-svg" viewBox="0 0 240 120" aria-label="描边动画"><path class="dr-path" pathLength="1" d="M20 70 C 50 10, 80 110, 118 55 S 185 15, 220 62"/><path class="dr-path dr-path2" pathLength="1" d="M120 30 L120 95"/></svg>',
+    css: `
+.dr-svg{width:250px;height:130px}
+.dr-path{fill:none;stroke:#43d9ff;stroke-width:4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:dr-draw var(--dr-dur,1.8s) cubic-bezier(.65,0,.35,1) forwards}
+.dr-path2{stroke:#8b8cff;stroke-width:2;animation-delay:.9s}
+@keyframes dr-draw{to{stroke-dashoffset:0}}`,
+    code: `<!-- HTML -->
+<svg viewBox="0 0 240 120" width="240">
+  <path pathLength="1" d="M20 70 C 50 10, 80 110, 118 55 S 185 15, 220 62"/>
+</svg>
+<style>
+svg path{fill:none;stroke:#43d9ff;stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:1;stroke-dashoffset:1;
+  animation:draw 1.8s cubic-bezier(.65,0,.35,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+</style>
+<!-- 关键：pathLength="1" 把路径长度归一，dasharray/dashoffset 统一成 0~1，免算 getTotalLength() -->`,
+    usage: '签名动效、Logo 勾勒、时间轴连线、进度线、图标轮廓绘制。',
+    note: 'pathLength="1" 是关键，省去 getTotalLength()；多段路径用 animation-delay 排先后。与"成功对勾"同机制，但此条用于任意轮廓，是待收录清单里"描边绘制 svg stroke"的落地。',
+    variants: ['文字外轮廓描边', '沿路径运动的轨迹点', '描边完成后填充上色']
+  },
+
+  /* ---- 增量 4 / 共享元素过渡 · View Transitions 路径（变体 · 转场） ---- */
+  {
+    id: 'shared-element-vt',
+    name: '共享元素过渡【变体】',
+    en: 'Shared Element · View Transitions',
+    cat: 'transition',
+    def: '【变体】点缩略图，同一元素跨视图放大到详情位——原库"共享元素"用两屏淡入淡出模拟；本条走 View Transitions API，浏览器自动插值同名元素，代码更少更顺。',
+    keywords: ['共享元素', '元素过渡', '图片放大', 'hero transition', 'view transitions', 'shared element'],
+    params: [{ k: '--vt-dur', l: '过渡时长', min: 0.2, max: 1.2, step: 0.05, v: 0.5, u: 's' }],
+    stage: '<div class="vt-root"><div class="vt-grid"><div class="vt-card"></div><div class="vt-card"></div><div class="vt-card"></div></div><div class="vt-detail"><div class="vt-hero"></div><span>点卡片放大 · 再点返回</span></div></div>',
+    css: `
+.vt-root{width:260px;height:150px;color:#98a0b2;font-size:11px;position:relative}
+.vt-grid{display:flex;gap:10px;position:absolute;inset:0 0 auto 0}
+.vt-card{flex:1;height:96px;border-radius:10px;cursor:pointer;background:linear-gradient(135deg,#8b8cff,#43d9ff);transition:opacity .2s}
+.vt-detail{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0;pointer-events:none;transition:opacity var(--vt-dur,0.5s)}
+.vt-root.open .vt-grid{opacity:0;pointer-events:none}
+.vt-root.open .vt-detail{opacity:1;pointer-events:auto}
+.vt-hero{width:150px;height:96px;border-radius:14px;cursor:pointer;background:linear-gradient(135deg,#8b8cff,#43d9ff)}
+::view-transition-old(vt-hero),::view-transition-new(vt-hero){animation-duration:var(--vt-dur,0.5s)}`,
+    mount: function (el) {
+      var root = el.querySelector('.vt-root');
+      if (!root) return;
+      var cards = Array.prototype.slice.call(root.querySelectorAll('.vt-card'));
+      var hero = root.querySelector('.vt-hero');
+      var flip = function (e) {
+        e.stopPropagation();
+        var opening = !root.classList.contains('open');
+        var run = function () {
+          if (opening) { cards[0].style.viewTransitionName = 'vt-hero'; hero.style.viewTransitionName = 'vt-hero'; }
+          root.classList.toggle('open', opening);
+          setTimeout(function () { cards[0].style.viewTransitionName = 'none'; hero.style.viewTransitionName = 'none'; }, 700);
+        };
+        (document.startViewTransition ? document.startViewTransition(run) : run)();
+      };
+      cards.forEach(function (c) { c.addEventListener('click', flip); });
+      hero.addEventListener('click', flip);
+      return function () {
+        cards.forEach(function (c) { c.removeEventListener('click', flip); });
+        hero.removeEventListener('click', flip);
+      };
+    },
+    code: `<!-- HTML：点卡片放大，点大图返回 -->
+<div class="gal"> <!-- 三张 .thumb --> </div>
+<div class="detail"><div class="hero"></div></div>
+<style>
+.hero{view-transition-name:hero}
+::view-transition-old(hero),::view-transition-new(hero){animation-duration:.5s}
+/* 简化布局：.gal / .detail 切换显隐即可 */
+</style>
+<script>
+function open(){ if(!document.startViewTransition){toggle();return;}
+  document.startViewTransition(toggle) }
+function toggle(){document.body.classList.toggle('open')}
+<\/script>
+<!-- 不支持 View Transitions 的浏览器自动退回 class 切换；原库"共享元素"可作 FLIP 兜底 -->`,
+    usage: '图文列表→详情、相册缩略图放大、商品卡展开；跨路由页面级共享元素。',
+    note: '同名元素设 view-transition-name，浏览器自动插值位置与尺寸；不支持时退回 class 切换。原库已收录"共享元素"，本条按去重规则应并入其 variants，作为新的实现路径而非新条目。',
+    variants: ['FLIP 手动实现（First-Last-Invert-Play）', '列表→详情整卡展开', '跨页面路由级共享']
+  },
+
+  /* ---- 增量 5 / 遮罩揭示（变体 · 转场） ---- */
+  {
+    id: 'mask-reveal',
+    name: '遮罩揭示【变体】',
+    en: 'Image Mask Reveal',
+    cat: 'transition',
+    def: '【变体】新画面用 clip-path 从一侧揭开旧画面，内部轻微缩放回位；Banner、前后对比、图片揭幕。原库"遮罩擦除"是整屏侧推，此条是被揭开画面自身放大回位。',
+    keywords: ['遮罩揭示', '图片揭示', '前后对比', 'clip-path', 'mask reveal', 'wipe reveal'],
+    params: [{ k: '--mr-dur', l: '揭示时长', min: 0.4, max: 2.4, step: 0.1, v: 1.1, u: 's' }],
+    stage: '<div class="mr-root"><div class="mr-old">BEFORE</div><div class="mr-new"><span class="mr-inner">AFTER</span></div></div>',
+    css: `
+.mr-root{width:270px;height:150px;position:relative;border-radius:10px;overflow:hidden;background:#12172a;color:#0a0c11;font-weight:800;font-size:20px;letter-spacing:2px}
+.mr-old,.mr-new{position:absolute;inset:0;display:grid;place-items:center}
+.mr-old{background:linear-gradient(135deg,#55607a,#2a3250);color:#c9d2e6}
+.mr-new{background:linear-gradient(135deg,#43d9ff,#8b8cff);clip-path:inset(0 100% 0 0);animation:mr-wipe var(--mr-dur,1.1s) cubic-bezier(.76,0,.24,1) infinite alternate}
+.mr-inner{animation:mr-scale var(--mr-dur,1.1s) cubic-bezier(.76,0,.24,1) infinite alternate}
+@keyframes mr-wipe{to{clip-path:inset(0 0 0 0)}}
+@keyframes mr-scale{from{transform:scale(1.18)}to{transform:scale(1)}}`,
+    code: `<!-- HTML -->
+<div class="compare">
+  <div class="before">BEFORE</div>
+  <div class="after"><span>AFTER</span></div>
+</div>
+<style>
+.compare{position:relative;width:280px;height:160px;overflow:hidden}
+.before,.after{position:absolute;inset:0;display:grid;place-items:center}
+.after{clip-path:inset(0 100% 0 0);animation:wipe 1.1s cubic-bezier(.76,0,.24,1) infinite alternate}
+.after span{animation:back 1.1s cubic-bezier(.76,0,.24,1) infinite alternate}
+@keyframes wipe{to{clip-path:inset(0 0 0 0)}}
+@keyframes back{from{transform:scale(1.18)}to{transform:scale(1)}}
+</style>`,
+    usage: '图片揭幕、Before/After 对比、Banner 换幕、详情页头图入场。',
+    note: '遮罩动 clip-path、内容动 scale，两条曲线同步才不脱节。原库"遮罩擦除"做整屏侧推，此条是内容回缩；按去重规则应记为变体。',
+    variants: ['圆形扩散揭示（circle()）', '跟随手指位置揭示', '噪点/刷子形状遮罩']
+  },
+
+  /* ---- 增量 6 / 整屏吸附滚动（变体 · 滚动） ---- */
+  {
+    id: 'fullpage-snap',
+    name: '整屏吸附滚动【变体】',
+    en: 'Full-page Snap',
+    cat: 'scroll',
+    def: '【变体】滚动结束自动对齐到整屏，停不到半页；落地页、引导页、全屏叙事的骨架。原库"横向吸附"是 x 轴轮播，此条为 y 轴整屏翻页。',
+    keywords: ['整屏翻页', '全屏吸附', '吸附滚动', '一屏一页', 'full page snap', 'scroll snap', 'pagination'],
+    params: [],
+    stage: '<div class="fs-scroll"><div class="fs-page" style="background:linear-gradient(135deg,#2b3350,#4a5590)">01 · 向下滚</div><div class="fs-page" style="background:linear-gradient(135deg,#1f5f5a,#2aa894)">02 · 继续</div><div class="fs-page" style="background:linear-gradient(135deg,#6b4a2a,#c98a3c)">03 · 到底</div></div>',
+    css: `
+.fs-scroll{width:250px;height:150px;overflow-y:scroll;border-radius:10px;scroll-snap-type:y mandatory;scroll-behavior:smooth;scrollbar-width:none}
+.fs-scroll::-webkit-scrollbar{display:none}
+.fs-page{height:150px;scroll-snap-align:start;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px}`,
+    code: `<!-- HTML -->
+<div class="pages">
+  <section>01</section><section>02</section><section>03</section>
+</div>
+<style>
+.pages{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.pages section{height:100vh;scroll-snap-align:start}
+</style>
+<!-- 长内容用 proximity 替代 mandatory 更友好；无需任何 JS -->`,
+    usage: '产品介绍落地页、新手引导、全屏叙事、作品集翻页。',
+    note: '容器 scroll-snap-type:y mandatory + 子项 scroll-snap-align:start 即可，无需 JS。mandatory 强制对齐，长内容改 proximity 更友好。原库"横向吸附"是 x 轴，此条是 y 轴，记为变体。',
+    variants: ['横向轮播吸附（原库已收）', '滚动驱动动画（scroll-timeline）', '吸附 + 页码指示器']
+  },
+
+  /* ---- 增量 7 / 抖动提示 · 增强（已收录·增强 · 交互反馈） ---- */
+  {
+    id: 'shake-hint',
+    name: '抖动提示【已收录·增强】',
+    en: 'Shake Hint',
+    cat: 'interaction',
+    def: '【已收录·增强】校验失败时元素左右衰减抖动并转红——原库"错误抖动"已命中，本条把幅度/时长抽成参数，仅作调参对照，按去重规则不重复入库。',
+    keywords: ['抖动', '报错抖动', '校验失败', 'shake', 'error shake', '晃动提示'],
+    params: [
+      { k: '--hk-amp', l: '抖动幅度', min: 2, max: 14, step: 1, v: 8, u: 'px' },
+      { k: '--hk-dur', l: '抖动时长', min: 0.2, max: 1, step: 0.05, v: 0.45, u: 's' }
+    ],
+    stage: '<div class="hk-box"><input class="hk-input" value="错误的内容" readonly><button class="hk-btn">触发抖动</button></div>',
+    css: `
+.hk-box{display:flex;flex-direction:column;gap:12px;align-items:center}
+.hk-input{width:200px;padding:10px 12px;border:2px solid #4a5578;border-radius:8px;background:#12172a;color:#e8ecf4;font-size:14px;outline:none}
+.hk-btn{border:none;border-radius:7px;background:#8b8cff;color:#0a0c11;padding:6px 14px;font-size:12px;cursor:pointer}
+.hk-input.shake{animation:hk-x var(--hk-dur,0.45s) ease;border-color:#ff5d6c}
+@keyframes hk-x{0%,100%{transform:translateX(0)}15%{transform:translateX(calc(-1 * var(--hk-amp,8px)))}35%{transform:translateX(var(--hk-amp,8px))}55%{transform:translateX(calc(-0.6 * var(--hk-amp,8px)))}75%{transform:translateX(calc(0.4 * var(--hk-amp,8px)))}}`,
+    mount: function (el) {
+      var input = el.querySelector('.hk-input'), btn = el.querySelector('.hk-btn');
+      if (!input || !btn) return;
+      var fn = function (e) { e.stopPropagation(); input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake'); };
+      btn.addEventListener('click', fn);
+      return function () { btn.removeEventListener('click', fn); };
+    },
+    code: `<!-- HTML -->
+<input class="err" value="错误的内容"><button class="go">提交</button>
+<style>
+.err.shake{animation:x .45s ease;border-color:#ff5d6c}
+@keyframes x{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-8px)} 35%{transform:translateX(8px)}
+  55%{transform:translateX(-5px)} 75%{transform:translateX(3px)}
+}
+</style>
+<script>
+document.querySelector('.go').onclick=function(e){
+  var i=document.querySelector('.err');i.classList.remove('shake');void i.offsetWidth;i.classList.add('shake')
+}
+<\/script>`,
+    usage: '表单校验失败、登录错误、非法输入等需要"拒绝"反馈的场景。',
+    note: '负反馈衰减振幅，切勿匀速来回；颜色变化同步发生才像报错。已收录条目，仅把幅度/时长参数化供调校；无障碍模式下应改为静态红框。',
+    variants: ['弹簧归位', '整卡抖动 + 红框呼吸', 'prefers-reduced-motion 下静态红框']
+  },
+
+  /* ---- 增量 8 / 文字解密（新增 · 文字） ---- */
+  {
+    id: 'decrypt-text',
+    name: '文字解密【新增】',
+    en: 'Decrypted Text',
+    cat: 'text',
+    def: '【新增】乱码字符逐帧收敛成最终文案，像"解码中"；科技感标题、登录强调、Hero 文案的高频动效。来自 react-bits「Decrypted Text」的零依赖重写。',
+    keywords: ['文字解密', '乱码文字', '解码动画', '字符收敛', 'decrypted text', 'scramble text', 'decode'],
+    params: [{ k: '--dt-speed', l: '帧间隔', min: 20, max: 120, step: 10, v: 55, u: 'ms' }],
+    stage: '<div class="dt-box" data-text="MOTION DECODED">MOTION DECODED</div>',
+    css: `
+.dt-box{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;letter-spacing:2px;color:#43d9ff;text-shadow:0 0 18px rgba(67,217,255,.45)}`,
+    mount: function (el) {
+      var box = el.querySelector('.dt-box');
+      if (!box) return;
+      var target = box.dataset.text, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+      var frame = 0, raf = 0, last = 0;
+      var tick = function (t) {
+        raf = requestAnimationFrame(tick);
+        var sp = parseFloat(getComputedStyle(el).getPropertyValue('--dt-speed')) || 55;
+        if (document.documentElement.dataset.paused === '1' || t - last < sp) return;
+        last = t; frame++;
+        var reveal = Math.floor(frame / 2);
+        box.textContent = Array.prototype.map.call(target, function (c, i) {
+          if (c === ' ') return ' ';
+          return i < reveal ? c : chars[(Math.random() * chars.length) | 0];
+        }).join('');
+        if (reveal >= target.length) {
+          cancelAnimationFrame(raf);
+          setTimeout(function () { frame = 0; raf = requestAnimationFrame(tick); }, 2200);
+        }
+      };
+      raf = requestAnimationFrame(tick);
+      return function () { cancelAnimationFrame(raf); };
+    },
+    code: `<!-- HTML -->
+<div class="decrypt" data-text="HELLO WORLD">HELLO WORLD</div>
+<script>
+(function(){
+  var el=document.querySelector('.decrypt'),t=el.dataset.text,cs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@';
+  var n=0; setInterval(function(){
+    var r=Math.floor(n/2);
+    el.textContent=[].map.call(t,function(c,i){return c===' '?' ':(i<r?c:cs[Math.random()*cs.length|0])}).join('');
+    n++; if(r>t.length)n=0;
+  },55);
+})();
+<\/script>`,
+    usage: '科技/游戏风 Hero 文案、加载完成后的标题、终端/黑客风界面。',
+    note: '未解锁字符替换为随机字符，reveal 指针推进逐个固定，空格保持不动。rAF 循环里检查 document.documentElement.dataset.paused 以响应页面"暂停动效"。',
+    variants: ['悬停才解密', '中文按字节解码', '解密完成切换配色']
+  },
+
+  /* ---- 增量 9 / 折叠展开（新增 · 转场） ---- */
+  {
+    id: 'accordion-open',
+    name: '折叠展开【新增】',
+    en: 'Accordion Open',
+    cat: 'transition',
+    def: '【新增】内容高度与箭头同步插值展开——用 grid-template-rows 0fr→1fr，告别 max-height 的魔法数字。来自 motion-lab「Accordion open」。',
+    keywords: ['折叠', '手风琴', '展开收起', 'accordion', 'collapse', 'expand', 'details'],
+    params: [{ k: '--ac-dur', l: '展开时长', min: 0.2, max: 1, step: 0.05, v: 0.4, u: 's' }],
+    stage: '<div class="ac-root"><button class="ac-head"><span>点我展开</span><i class="ac-arrow">⌄</i></button><div class="ac-panel"><div class="ac-in">用 grid 的 0fr→1fr 做高度动画，内容多高都能自适应，不需要写死 max-height。</div></div></div>',
+    css: `
+.ac-root{width:250px;background:#12172a;border-radius:10px;overflow:hidden;color:#e8ecf4;font-size:13px}
+.ac-head{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:none;color:inherit;padding:14px;cursor:pointer;font-size:13px}
+.ac-arrow{transition:transform var(--ac-dur,0.4s) ease;font-style:normal}
+.ac-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--ac-dur,0.4s) ease}
+.ac-in{overflow:hidden;color:#98a0b2;line-height:1.6;padding:0 14px}
+.ac-root.open .ac-panel{grid-template-rows:1fr}
+.ac-root.open .ac-in{padding-bottom:14px}
+.ac-root.open .ac-arrow{transform:rotate(180deg)}`,
+    mount: function (el) {
+      var root = el.querySelector('.ac-root'), head = el.querySelector('.ac-head');
+      if (!root || !head) return;
+      var fn = function (e) { e.stopPropagation(); root.classList.toggle('open'); };
+      head.addEventListener('click', fn);
+      return function () { head.removeEventListener('click', fn); };
+    },
+    code: `<!-- HTML -->
+<div class="acc"><button>点我展开 <i>⌄</i></button><div class="panel"><div class="in">任意高度的内容都能自适应展开。</div></div></div>
+<style>
+.acc .panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s ease}
+.acc .in{overflow:hidden}                 /* 关键：内层必须 overflow:hidden */
+.acc.open .panel{grid-template-rows:1fr}
+.acc i{transition:transform .4s ease;display:inline-block}
+.acc.open i{transform:rotate(180deg)}
+</style>
+<script>document.querySelector('.acc button').onclick=function(){this.parentNode.classList.toggle('open')}<\/script>`,
+    usage: 'FAQ、设置分组、详情折叠、移动端筛选面板。',
+    note: '内层必须 overflow:hidden，grid 才能把高度收拢到 0；padding 也要参与过渡，否则收起后留白。用 grid-template-rows 而非 max-height，免猜内容高度。',
+    variants: ['多级嵌套手风琴', '与路由/锚点联动', '箭头改为 ＋→×']
+  },
+
+  /* ---- 增量 10 / 时间轴描边（新增 · 转场） ---- */
+  {
+    id: 'timeline-draw',
+    name: '时间轴描边【新增】',
+    en: 'Timeline Draw',
+    cat: 'transition',
+    def: '【新增】连接线先生长，节点再沿线依次落下——时间线、步骤条、流程叙事的"先骨架后内容"节奏。来自 motion-lab「Timeline draw」。',
+    keywords: ['时间轴', '步骤条', '流程动画', '节点依次', 'timeline draw', 'process', 'stepper'],
+    params: [{ k: '--tm-dur', l: '总线时长', min: 0.6, max: 3, step: 0.1, v: 1.5, u: 's' }],
+    stage: '<div class="tm-root"><div class="tm-line"></div><div class="tm-row"><i></i><span>发现问题</span></div><div class="tm-row"><i></i><span>设计方案</span></div><div class="tm-row"><i></i><span>验证结论</span></div></div>',
+    css: `
+.tm-root{position:relative;padding-left:26px;display:grid;gap:16px;color:#e8ecf4;font-size:13px}
+.tm-line{position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:linear-gradient(#8b8cff,#43d9ff);transform-origin:top;transform:scaleY(0);animation:tm-grow var(--tm-dur,1.5s) ease forwards}
+.tm-row{position:relative;display:flex;align-items:center;gap:8px;opacity:0;animation:tm-in .5s ease forwards}
+.tm-row i{position:absolute;left:-25px;width:10px;height:10px;border-radius:50%;background:#43d9ff;box-shadow:0 0 0 4px #0a0c11}
+.tm-row:nth-child(2){animation-delay:.35s}
+.tm-row:nth-child(3){animation-delay:.75s}
+.tm-row:nth-child(4){animation-delay:1.15s}
+@keyframes tm-grow{to{transform:scaleY(1)}}
+@keyframes tm-in{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}`,
+    code: `<!-- HTML -->
+<div class="tl"><div class="line"></div><div class="row"><i></i>发现问题</div><div class="row"><i></i>设计方案</div><div class="row"><i></i>验证结论</div></div>
+<style>
+.tl{position:relative;padding-left:24px;display:grid;gap:16px}
+.tl .line{position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:#8b8cff;transform-origin:top;transform:scaleY(0);animation:grow 1.5s ease forwards}
+.tl .row{opacity:0;animation:in .5s ease forwards}
+.tl .row:nth-of-type(1){animation-delay:.35s}
+.tl .row:nth-of-type(2){animation-delay:.75s}
+.tl .row:nth-of-type(3){animation-delay:1.15s}
+@keyframes grow{to{transform:scaleY(1)}}
+@keyframes in{to{opacity:1}}
+</style>`,
+    usage: '时间线、步骤指引、流程说明、技术路线图、Intro 叙事。',
+    note: '先让线 scaleY 生长，再让节点按 delay 落下；节点出现在空线上会像渲染 bug。delay 要覆盖线长一半以上，视觉才连贯。',
+    variants: ['滚动到视口才播放', '水平时间轴', '节点点击展开详情']
+  },
+
+  /* ---- 增量 11 / 故障文字（新增 · 文字） ---- */
+  {
+    id: 'glitch-text',
+    name: '故障文字【新增】',
+    en: 'Glitch Text',
+    cat: 'text',
+    def: '【新增】文字分层错位 + RGB 色散 + 随机裁切抖动，制造信号故障感——赛博/游戏/错误态标题。来自 react-bits「Glitch Text」。',
+    keywords: ['故障文字', '抖动文字', '色散', '毛刺', 'glitch text', 'rgb split', 'cyberpunk'],
+    params: [{ k: '--gt-dur', l: '故障周期', min: 0.8, max: 4, step: 0.2, v: 2, u: 's' }],
+    stage: '<div class="gt-box" data-t="SIGNAL LOST">SIGNAL LOST</div>',
+    css: `
+.gt-box{position:relative;font-family:ui-monospace,monospace;font-size:24px;font-weight:800;letter-spacing:3px;color:#e8ecf4}
+.gt-box::before,.gt-box::after{content:attr(data-t);position:absolute;inset:0}
+.gt-box::before{color:#ff3d77;animation:gt-a var(--gt-dur,2s) steps(2,end) infinite}
+.gt-box::after{color:#43d9ff;animation:gt-b var(--gt-dur,2s) steps(2,end) infinite}
+@keyframes gt-a{0%,92%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}93%{clip-path:inset(10% 0 60% 0);transform:translate(-3px,1px)}96%{clip-path:inset(60% 0 15% 0);transform:translate(3px,-1px)}}
+@keyframes gt-b{0%,92%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}94%{clip-path:inset(40% 0 30% 0);transform:translate(3px,-1px)}97%{clip-path:inset(70% 0 5% 0);transform:translate(-3px,1px)}}`,
+    code: `<!-- HTML -->
+<div class="glitch" data-t="SIGNAL LOST">SIGNAL LOST</div>
+<style>
+.glitch{position:relative;font:800 32px monospace;color:#fff}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;inset:0}
+.glitch::before{color:#ff3d77;animation:a 2s steps(2,end) infinite}
+.glitch::after{color:#43d9ff;animation:b 2s steps(2,end) infinite}
+@keyframes a{0%,92%,100%{clip-path:inset(0 0 100% 0);transform:none}93%{clip-path:inset(10% 0 60% 0);transform:translate(-3px,1px)}96%{clip-path:inset(60% 0 15% 0);transform:translate(3px,-1px)}}
+@keyframes b{0%,92%,100%{clip-path:inset(0 0 100% 0);transform:none}94%{clip-path:inset(40% 0 30% 0);transform:translate(3px,-1px)}97%{clip-path:inset(70% 0 5% 0);transform:translate(-3px,1px)}}
+</style>`,
+    usage: '赛博朋克/游戏风标题、系统错误态、加载失败提示、品牌活动页。',
+    note: '两层伪元素用 clip-path 只露随机横条并左右偏移，配红/青色散；用 steps() 而非平滑插值才有数字故障的"跳帧感"。持续故障很吵，建议只用于短标题或悬停触发。',
+    variants: ['悬停才触发', '图片故障转场', '故障后解码为正常文字（串联文字解密）']
+  },
+
+  /* ---- 增量 12 / 滚动触发显现（新增 · 滚动） ---- */
+  {
+    id: 'scroll-reveal',
+    name: '滚动触发显现【新增】',
+    en: 'Scroll Reveal',
+    cat: 'scroll',
+    def: '【新增】元素进入视口才上浮淡入，离开不回退——长文、卡片墙、落地页的默认阅读节奏。原库待收录项，来自 60fps 高频 Pattern。',
+    keywords: ['滚动显现', '进入视口', '滚动出现', '渐入', 'scroll reveal', 'in view', 'intersection observer'],
+    params: [{ k: '--sr-dur', l: '显现时长', min: 0.3, max: 1.5, step: 0.1, v: 0.6, u: 's' }],
+    stage: '<div class="sr-scroll"><div class="sr-card">↓ 向下滚动</div><div class="sr-card">进入视口即显现</div><div class="sr-card">不必回退重播</div><div class="sr-card">读者节奏自己掌控</div></div>',
+    css: `
+.sr-scroll{width:250px;height:150px;overflow-y:auto;border-radius:10px;scrollbar-width:none;display:grid;gap:10px;padding:10px;align-content:start}
+.sr-scroll::-webkit-scrollbar{display:none}
+.sr-card{height:110px;flex:none;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#2a3250,#8b8cff);color:#fff;font-size:13px;font-weight:600;opacity:0;transform:translateY(22px);transition:opacity var(--sr-dur,0.6s) ease,transform var(--sr-dur,0.6s) ease}
+.sr-card.in{opacity:1;transform:none}`,
+    mount: function (el) {
+      var box = el.querySelector('.sr-scroll');
+      if (!box) return;
+      var cards = Array.prototype.slice.call(box.querySelectorAll('.sr-card'));
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { root: box, threshold: 0.25 });
+      cards.forEach(function (c) { io.observe(c); });
+      return function () { io.disconnect(); };
+    },
+    code: `<!-- HTML -->
+<div class="list"><div class="item">…</div><div class="item">…</div></div>
+<style>
+.item{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.item.in{opacity:1;transform:none}
+</style>
+<script>
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(e){ if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)} })
+},{threshold:.25});
+document.querySelectorAll('.item').forEach(function(el){io.observe(el)});
+<\/script>
+<!-- 整页滚动时 root 省略；在内部滚动容器里需指定 root:容器 -->`,
+    usage: '长文段落、卡片墙、图片瀑布流、落地页各区块的依次显现。',
+    note: '用 IntersectionObserver 在进入时加 .in，随后 unobserve 避免回退重播，还原"阅读一次"体验。整页滚动用默认 root，内部滚动容器要指定 root。',
+    variants: ['交错显现（配合 --index）', '从两侧交替进入', '只首次触发一次']
   }
+
 
 ];
 
