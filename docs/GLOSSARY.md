@@ -2,7 +2,7 @@
 
 这份表是「AI 能听懂」的底座：只要说出左列任一个词，就应直接对应到一个实现，不需要再解释"它长什么样"。
 
-## 已收录（42）
+## 已收录（54）
 
 | 中文标准名 | 英文标准名 | 分类 | 常用触发词 | 一句话 |
 |---|---|---|---|---|
@@ -48,6 +48,18 @@
 | 横向吸附 | Scroll Snap | 滚动 | 吸附滚动 / 轮播吸附 / scroll snap | 横滑结束自动对齐到最近一屏，不停在半张卡上 |
 | 滚动缩放 | Scroll Scale | 滚动 | 镜头拉远 / 滚动画布 / scale on scroll | 进入时放大局部，随滚动退回全景 |
 | 回到顶部 | Back to Top | 滚动 | 返回顶部 / 置顶按钮 / back to top | 滚过一屏后浮出圆钮，点击平滑回顶 |
+| 逐行升起 | Line Reveal | 文字 | 文字上浮 / 按行出现 / line reveal | 每行从遮罩下升起并去模糊，按序交错 |
+| 图标变形 | Icon Morph | 形变 | 汉堡变叉 / 加号变关闭 / icon morph | 同一图形旋转变形，代替图标硬切换 |
+| 描边动画 | Stroke Draw | 文字 | 一笔画 / svg 描边 / draw svg | stroke-dashoffset 让路径沿自身画出 |
+| 共享元素过渡 | Shared Element · VT | 转场 | 图片放大 / view transitions | View Transitions 自动插值同名元素（原共享元素变体） |
+| 遮罩揭示 | Image Mask Reveal | 转场 | 图片揭示 / 前后对比 / mask reveal | clip-path 揭开新画面 + 内容回缩（原遮罩擦除变体） |
+| 整屏吸附滚动 | Full-page Snap | 滚动 | 整屏翻页 / 一屏一页 / full page snap | y 轴整屏对齐（原横向吸附变体） |
+| 抖动提示 | Shake Hint | 交互反馈 | 报错抖动 / shake | 幅度/时长可调的增强版（原错误抖动，不重复入库） |
+| 文字解密 | Decrypted Text | 文字 | 乱码文字 / 解码动画 / scramble text | 乱码逐帧收敛成最终文案 |
+| 折叠展开 | Accordion Open | 转场 | 手风琴 / 展开收起 / accordion | grid 0fr→1fr 高度插值 + 箭头同步旋转 |
+| 时间轴描边 | Timeline Draw | 转场 | 步骤条 / 节点依次 / timeline draw | 连线先生长，节点再依次落下 |
+| 故障文字 | Glitch Text | 文字 | 色散 / 毛刺 / rgb split | 分层错位 + RGB 色散 + 随机裁切 |
+| 滚动触发显现 | Scroll Reveal | 滚动 | 进入视口 / in view / scroll reveal | 进入视口上浮淡入，不回退重播 |
 
 ## 待收录
 
